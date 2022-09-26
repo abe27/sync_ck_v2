@@ -53,6 +53,22 @@ for r in csvreader:
     print(f"Create Consignee {customer} Status: {response.status_code}")
     time.sleep(0.1)
 
+### read group
+file = open('data/master/group.csv')
+csvreader = csv.reader(file)
+for r in csvreader:
+    user = r[0]##"00534",
+    affcode = r[0]##"32Y1",
+    custcode = r[0]##"32Y1",
+    custname = r[0]##YAS,
+    order_group = r[0]##N,
+    sub_order = r[0]##-
+    # payload=f'whs_id={whs}&factory_id={factory}&affcode_id={affcode}&customer_id={customer}&customer_address_id={address}&prefix={prefix}&is_active=true'
+    # response = requests.request("POST", f"{api_host}/consignee", headers=headers, data=payload)
+    # print(f"Create Consignee {customer} Status: {response.status_code}")
+    # time.sleep(0.1)
+
+
 ### logout
 response = requests.request("GET", f"{api_host}/auth/logout", headers=headers, data={})
 print(response.text)
