@@ -57,15 +57,30 @@ for r in csvreader:
 file = open('data/master/group.csv')
 csvreader = csv.reader(file)
 for r in csvreader:
-    user = r[0]##"00534",
-    affcode = r[1]##"32Y1",
-    custcode = r[2]##"32Y1",
-    custname = r[3]##YAS,
-    order_group = r[4]##N,
-    sub_order = r[5]##-
-    payload=f'user_id={user}&whs_id=COM&factory_id=INJ&affcode_id={affcode}&custcode_id={custcode}&order_group_type_id={order_group}&sub_order={sub_order}&description=-&is_active=true'
+    username = r[0]
+    whs = r[1]
+    factory = r[2]
+    affcode = r[3]
+    customer = r[4]
+    order_group = r[5]
+    sub_order = r[6]
+    payload=f'user_id={username}&whs_id={whs}&factory_id={factory}&affcode_id={affcode}&custcode_id={customer}&order_group_type_id={order_group}&sub_order={sub_order}&description=-&is_active=true'
     response = requests.request("POST", f"{api_host}/order/consignee", headers=headers, data=payload)
-    print(f"create consignee {user} ==> {affcode} customer:{custcode} group is: {response.status_code}")
+    print(f"create consignee {username} ==> {affcode} customer:{customer} group is: {response.status_code}")
+    time.sleep(0.1)
+
+### read loading area
+file = open('data/master/loading_area.csv')
+csvreader = csv.reader(file)
+for r in csvreader:
+    bioat = r[0]
+    factory = r[1]
+    prefix = r[2]
+    loading_area = r[3]
+    privilege = r[4]
+    payload=f'bioat={bioat}&factory={factory}&prefix={prefix}&loading_area={loading_area}&privilege={privilege}&is_active=true'
+    response = requests.request("POST", f"{api_host}/order/loading", headers=headers, data=payload)
+    print(f"create loading Area {loading_area} is: {response.status_code}")
     time.sleep(0.1)
 
 
