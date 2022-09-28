@@ -30,40 +30,44 @@ list_dir.sort()
 
 rn = 1
 for x in list_dir:
-    edi_dir = os.listdir(os.path.join('data/edi', x))
-    edi_dir.sort()
-    for i in edi_dir:
-        on_dir = os.path.join('data/edi', x)
-        filename = os.path.join(on_dir, i)
-        batch_id = str(i)[:7]
-        batch_name = str(i)[8:]
-        batch_date = datetime.strptime(
-            (str(i)[(len(batch_name) - 10):]).replace(".TXT", ""),
-            "%Y%m%d%H%M%S").strftime("%Y-%m-%dT%H:%M:%S%Z") + ".000Z"
-        payload = {
-            'mailbox_id': 'Y32V802',
-            'batch_no': batch_id,
-            'creation_on': batch_date,
-            'flags': 'C RT',
-            'format_type': 'A',
-            'originator': 'Y32TPS1',
-            'is_download': 'false',
-            'is_active': 'true'
-        }
+    if x != ".DS_Store":
+        edi_dir = os.listdir(os.path.join('data/edi', x))
+        edi_dir.sort()
+        for i in edi_dir:
+            if i != ".DS_Store":
+                on_dir = os.path.join('data/edi', x)
+                filename = os.path.join(on_dir, i)
+                batch_id = str(i)[:7]
+                batch_name = str(i)[8:]
+                batch_date = datetime.strptime(
+                    (str(i)[(len(batch_name) - 10):]).replace(".TXT", ""),
+                    "%Y%m%d%H%M%S").strftime("%Y-%m-%dT%H:%M:%S%Z") + ".000Z"
+                payload = {
+                    'mailbox_id': 'Y32V802',
+                    'batch_no': batch_id,
+                    'creation_on': batch_date,
+                    'flags': 'C RT',
+                    'format_type': 'A',
+                    'originator': 'Y32TPS1',
+                    'is_download': 'false',
+                    'is_active': 'true'
+                }
 
-        # print(payload)
-        f = open(filename, 'rb')
-        files = [('file_edi', (batch_name, f, 'application/octet-stream'))]
-        response = requests.request("POST",
-                                    f'{api_host}/edi/file',
-                                    headers={
-                                        'Authorization': f'Bearer {token}', },
-                                    data=payload,
-                                    files=files)
-        f.close()
-        print(f"{rn} ==> upload file edi: {batch_name} status: {response.status_code}")
-        rn += 1
-    
+                # print(payload)
+                f = open(filename, 'rb')
+                files = [
+                    ('file_edi', (batch_name, f, 'application/octet-stream'))]
+                response = requests.request("POST",
+                                            f'{api_host}/edi/file',
+                                            headers={
+                                                'Authorization': f'Bearer {token}', },
+                                            data=payload,
+                                            files=files)
+                f.close()
+                print(
+                    f"{rn} ==> upload file edi: {batch_name} status: {response.status_code}")
+                rn += 1
+
     time.sleep(5)
 
 # logout
