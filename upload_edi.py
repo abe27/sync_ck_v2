@@ -12,6 +12,7 @@ api_host = os.getenv("API_HOST")
 api_user = os.getenv("API_USERNAME")
 api_password = os.getenv("API_PASSWORD")
 
+
 def main():
     try:
         # login
@@ -26,24 +27,39 @@ def main():
             'Authorization': f'Bearer {token}',
             'Content-Type': 'application/x-www-form-urlencoded'
         }
+
+        # get mailbox
+        try:
+            url = "http://127.0.0.1:4040/api/v1/edi/mailbox"
+            payload = {}
+            response = requests.request(
+                "GET", url, headers=headers, data=payload)
+            print(response.text)
+        except Exception as ex:
+            print(ex)
+            pass
+
         try:
             # print(headers)
-            list_dir = os.listdir(os.path.join(os.path.dirname(__file__), 'data/edi'))
+            source_dir = "data/download"
+            list_dir = os.listdir(os.path.join(
+                os.path.dirname(__file__), source_dir))
             list_dir.sort()
 
             rn = 1
             for x in list_dir:
                 if x != ".DS_Store":
-                    edi_dir = os.listdir(os.path.join('data/edi', x))
+                    edi_dir = os.listdir(os.path.join(source_dir, x))
                     edi_dir.sort()
                     for i in edi_dir:
                         if i != ".DS_Store":
-                            on_dir = os.path.join('data/edi', x)
+                            on_dir = os.path.join(source_dir, x)
                             filename = os.path.join(on_dir, i)
                             batch_id = str(i)[:7]
                             batch_name = str(i)[8:]
                             batch_date = datetime.strptime(
-                                (str(i)[(len(batch_name) - 10):]).replace(".TXT", ""),
+                                (str(i)[(len(batch_name) - 10):]
+                                 ).replace(".TXT", ""),
                                 "%Y%m%d%H%M%S").strftime("%Y-%m-%dT%H:%M:%S%Z") + ".000Z"
                             payload = {
                                 'mailbox_id': 'Y32V802',
@@ -82,6 +98,7 @@ def main():
     except Exception as e:
         print(e)
         pass
+
 
 if __name__ == "__main__":
     main()
