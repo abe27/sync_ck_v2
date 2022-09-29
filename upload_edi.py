@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime, timedelta
 import os
+import shutil
 import sys
 import time
 import requests
@@ -28,19 +29,20 @@ def main():
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-        # get mailbox
-        try:
-            url = "http://127.0.0.1:4040/api/v1/edi/mailbox"
-            payload = {}
-            response = requests.request(
-                "GET", url, headers=headers, data=payload)
-            print(response.text)
-        except Exception as ex:
-            print(ex)
-            pass
+        # # get mailbox
+        # try:
+        #     url = "http://127.0.0.1:4040/api/v1/edi/mailbox"
+        #     payload = {}
+        #     response = requests.request(
+        #         "GET", url, headers=headers, data=payload)
+        #     print(response.text)
+        # except Exception as ex:
+        #     print(ex)
+        #     pass
 
         try:
             # print(headers)
+            distination_dir = "data/edi"
             source_dir = "data/download"
             list_dir = os.listdir(os.path.join(
                 os.path.dirname(__file__), source_dir))
@@ -85,6 +87,13 @@ def main():
                             f.close()
                             print(
                                 f"{rn} ==> upload file edi: {batch_name} status: {response.status_code}")
+                            
+                            ### backup file edi
+                            to_dir = os.path.join(distination_dir, x)
+                            if os.path.exists(to_dir) != True:
+                                os.makedirs(to_dir)
+
+                            shutil.move(filename, os.path.join(to_dir, i))
                             rn += 1
 
                 # time.sleep(5)
