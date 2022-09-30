@@ -87,8 +87,8 @@ def main():
                             f.close()
                             print(
                                 f"{rn} ==> upload file edi: {batch_name} status: {response.status_code}")
-                            
-                            ### backup file edi
+
+                            # backup file edi
                             to_dir = os.path.join(distination_dir, x)
                             if os.path.exists(to_dir) != True:
                                 os.makedirs(to_dir)
@@ -96,6 +96,8 @@ def main():
                             shutil.move(filename, os.path.join(to_dir, i))
                             rn += 1
 
+                    os.rmdir(os.path.join(source_dir, x))
+                # new dir
                 # time.sleep(5)
         except Exception as ex:
             print(ex)
