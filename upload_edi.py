@@ -29,16 +29,16 @@ def main():
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-        # # get mailbox
-        # try:
-        #     url = "http://127.0.0.1:4040/api/v1/edi/mailbox"
-        #     payload = {}
-        #     response = requests.request(
-        #         "GET", url, headers=headers, data=payload)
-        #     print(response.text)
-        # except Exception as ex:
-        #     print(ex)
-        #     pass
+        # get mailbox
+        try:
+            url = "http://127.0.0.1:4040/api/v1/edi/mailbox"
+            payload = {}
+            response = requests.request(
+                "GET", url, headers=headers, data=payload)
+            print(response.text)
+        except Exception as ex:
+            print(ex)
+            pass
 
         try:
             # print(headers)
