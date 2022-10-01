@@ -83,6 +83,16 @@ for r in csvreader:
     print(f"create loading Area {loading_area} is: {response.status_code}")
     time.sleep(0.1)
 
+### read loading area
+file = open('data/master/location.csv')
+csvreader = csv.reader(file)
+for r in csvreader:
+    title = r[0]
+    payload = f'title={title}&description={title}&is_active=true'
+    response = requests.request("POST", f"{api_host}/location", headers=headers, data=payload)
+    print(f"create location {title} is: {response.status_code}")
+    time.sleep(0.1)
+
 
 ### logout
 response = requests.request("GET", f"{api_host}/auth/logout", headers=headers, data={})
