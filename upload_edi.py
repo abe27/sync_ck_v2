@@ -434,6 +434,10 @@ def sync_order(headers):
                 seq += 1
 
             # Update Order Status Sync
+            payload = 'is_sync=true&is_active=true'
+            response = requests.request(
+                "PUT", f"{api_host}/order/ent/{id}", headers=headers, data=payload)
+            print(f"UPDATE STATUS SYNC: {response.status_code}")
 
     except Exception as ex:
         print(ex)
