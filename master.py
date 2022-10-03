@@ -14,7 +14,8 @@ api_password = os.getenv("API_PASSWORD")
 passwd = urllib.parse.quote(api_password)
 payload = f'username={api_user}&password={passwd}'
 headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-response = requests.request("POST", f"{api_host}/login", headers=headers, data=payload)
+response = requests.request(
+    "POST", f"{api_host}/login", headers=headers, data=payload)
 auth = response.json()
 token = auth["data"]["jwt_token"]
 headers = {
@@ -22,7 +23,7 @@ headers = {
     'Content-Type': 'application/x-www-form-urlencoded'
 }
 # print(headers)
-### read user
+# read user
 file = open('data/master/user.csv')
 csvreader = csv.reader(file)
 for r in csvreader:
@@ -31,14 +32,15 @@ for r in csvreader:
     email = r[2]
     first_name = r[3]
     last_name = r[4]
-    payload=f'username={username}&email={urllib.parse.quote(email)}&password={urllib.parse.quote(password)}&firstname={first_name}&lastname={last_name}'
-    response = requests.request("POST", f"{api_host}/register", headers=headers, data=payload)
+    payload = f'username={username}&email={urllib.parse.quote(email)}&password={urllib.parse.quote(password)}&firstname={first_name}&lastname={last_name}'
+    response = requests.request(
+        "POST", f"{api_host}/register", headers=headers, data=payload)
     print(f"Create User {username} Status: {response.status_code}")
     time.sleep(0.1)
 
 print(f"----------------------------------------------------------------")
 
-### read consignee
+# read consignee
 file = open('data/master/consignee.csv')
 csvreader = csv.reader(file)
 for r in csvreader:
@@ -48,12 +50,13 @@ for r in csvreader:
     customer = r[3]
     address = r[4]
     prefix = r[5]
-    payload=f'whs_id={whs}&factory_id={factory}&affcode_id={affcode}&customer_id={customer}&customer_address_id={address}&prefix={prefix}&is_active=true'
-    response = requests.request("POST", f"{api_host}/consignee", headers=headers, data=payload)
+    payload = f'whs_id={whs}&factory_id={factory}&affcode_id={affcode}&customer_id={customer}&customer_address_id={address}&prefix={prefix}&is_active=true'
+    response = requests.request(
+        "POST", f"{api_host}/consignee", headers=headers, data=payload)
     print(f"Create Consignee {customer} Status: {response.status_code}")
     time.sleep(0.1)
 
-### read group
+# read group
 file = open('data/master/group.csv')
 csvreader = csv.reader(file)
 for r in csvreader:
@@ -64,12 +67,14 @@ for r in csvreader:
     customer = r[4]
     order_group = r[5]
     sub_order = r[6]
-    payload=f'user_id={username}&whs_id={whs}&factory_id={factory}&affcode_id={affcode}&custcode_id={customer}&order_group_type_id={order_group}&sub_order={sub_order}&description=-&is_active=true'
-    response = requests.request("POST", f"{api_host}/order/consignee", headers=headers, data=payload)
-    print(f"create consignee {username} ==> {affcode} customer:{customer} group is: {response.status_code}")
+    payload = f'user_id={username}&whs_id={whs}&factory_id={factory}&affcode_id={affcode}&custcode_id={customer}&order_group_type_id={order_group}&sub_order={sub_order}&description=-&is_active=true'
+    response = requests.request(
+        "POST", f"{api_host}/order/consignee", headers=headers, data=payload)
+    print(
+        f"create consignee {username} ==> {affcode} customer:{customer} group is: {response.status_code}")
     time.sleep(0.1)
 
-### read loading area
+# read loading area
 file = open('data/master/loading_area.csv')
 csvreader = csv.reader(file)
 for r in csvreader:
@@ -78,23 +83,36 @@ for r in csvreader:
     prefix = r[2]
     loading_area = r[3]
     privilege = r[4]
-    payload=f'bioat={bioat}&factory={factory}&prefix={prefix}&loading_area={loading_area}&privilege={privilege}&is_active=true'
-    response = requests.request("POST", f"{api_host}/order/loading", headers=headers, data=payload)
+    payload = f'bioat={bioat}&factory={factory}&prefix={prefix}&loading_area={loading_area}&privilege={privilege}&is_active=true'
+    response = requests.request(
+        "POST", f"{api_host}/order/loading", headers=headers, data=payload)
     print(f"create loading Area {loading_area} is: {response.status_code}")
     time.sleep(0.1)
 
-### read loading area
-file = open('data/master/location.csv')
-csvreader = csv.reader(file)
-for r in csvreader:
-    title = r[0]
+# read loading area
+for a in range(97, 123):
+    location = f"S-{str(chr(a)).upper()}"
+    for i in range(1, 5):
+        for e in range(1, 14):
+            for j in range(1, 5):
+                title = f"{location}{i:02d}-{e:02d}-{j:02d}"
+                payload = f'title={title}&description={title}&is_active=true'
+                response = requests.request(
+                    "POST", f"{api_host}/location", headers=headers, data=payload)
+                print(f"create location {title} is: {response.status_code}")
+                time.sleep(0.1)
+
+l = ["S-P58", "S-P59", "S-CK1", "S-CK2", "S-OVER-Y01", "S-OVER-Y02", "S-OVER-Y03", "S-OVER-Y04", "S-OVER-Y05",
+     "S-OVER-Y06", "S-OVER1", "S-OVER2", "S-OVER3", "S-HOLD", "S-REPALLET", "S-RECHECK", "SNON", "S-XXX", "S-PLOUT", "-"]
+for title in l:
     payload = f'title={title}&description={title}&is_active=true'
-    response = requests.request("POST", f"{api_host}/location", headers=headers, data=payload)
+    response = requests.request(
+        "POST", f"{api_host}/location", headers=headers, data=payload)
     print(f"create location {title} is: {response.status_code}")
     time.sleep(0.1)
 
 
-### logout
-response = requests.request("GET", f"{api_host}/auth/logout", headers=headers, data={})
+# logout
+response = requests.request(
+    "GET", f"{api_host}/auth/logout", headers=headers, data={})
 print(response.text)
-
