@@ -28,7 +28,7 @@ def main():
         }
         # generate invoice
         response = requests.request(
-            "PATCH", f"{api_host}/order/ent/generate", headers=headers, data={})
+            "PATCH", f"{api_host}/order/ent", headers=headers, data={})
         print(f"generate invoice status: {response.status_code}")
         # logout
         response = requests.request(

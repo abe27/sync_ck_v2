@@ -199,7 +199,7 @@ def get_mailbox(headers):
 
 def upload_edi(header):
     try:
-        headers = {'Authorization': header["Authorization"] },
+        headers = {'Authorization': header["Authorization"]},
         list_dir = os.listdir(os.path.join(
             os.path.dirname(__file__), source_dir))
         list_dir.sort()
@@ -360,7 +360,81 @@ def sync_receive(headers):
 def sync_order(headers):
     # Sync Order
     try:
-        print(f"test sync order")
+        response = requests.request(
+            "GET", f"{api_host}/order/ent", headers=headers, data={})
+        data = response.json()["data"]
+        for ord in data:
+            # print(ord)
+            id = ord["id"]
+            whs = ord["consignee"]["whs"]["title"]
+            cmaker = ord["consignee"]["whs"]["description"]
+            factory = ord["consignee"]["factory"]["title"]
+            inv_prefix = ord["consignee"]["factory"]["inv_prefix"]
+            label_prefix = ord["consignee"]["factory"]["label_prefix"]
+            shiptype = ord["shipment"]["title"]
+            affcode = ord["consignee"]["affcode"]["title"]
+            pc = ord["pc"]["title"]
+            commercial = ord["commercial"]["title"]
+            sampflg = ord["sample_flg"]["title"]
+            order_title = ord["order_title"]["title"]
+            etdtap = str(ord["etd_date"])[:10]
+            bioat = ord["bioat"]
+            bishpc = ord["consignee"]["customer"]["title"]
+            biivpx = ord["consignee"]["prefix"]
+            bisafn = ord["consignee"]["customer"]["description"]
+            ship_form = ord["ship_form"]
+            ship_to = ord["ship_to"]
+            loading_area = ord["loading_area"]
+            privilege = ord["privilege"]
+            zone_code = ord["zone_code"]
+            running_seq = int(ord["running_seq"])
+            inv_no = f"{inv_prefix}{biivpx}{etdtap[3:4]}{running_seq:04d}{shiptype}"
+
+            # print(f"factory={factory} inv_prefix={inv_prefix} label_prefix={label_prefix} shiptype={shiptype} affcode={affcode} pc={pc} commercial={commercial} sampflg={sampflg} order_title={order_title} etdtap={etdtap} bioat={bioat} bishpc={bishpc} biivpx={biivpx} bisafn={bisafn} ship_form={ship_form} ship_to={ship_to} loading_area={loading_area} privilege={privilege} zone_code={zone_code} running_seq={running_seq} ")
+            print(f"----------------------------------------------------------------")
+            print(f"INV: {inv_no} ==> {id}")
+            seq = 1
+            for b in ord["order_detail"]:
+                order_id = b["id"]
+                carriercode = b["orderplan"]["carrier_code"]
+                ordertype = b["orderplan"]["order_type"]["title"]
+                pono = b["pono"]
+                partno = b["ledger"]["part"]["title"]
+                partname = b["ledger"]["part"]["description"]
+                part_type = b["ledger"]["part_type"]["title"]
+                unit = b["ledger"]["unit"]["title"]
+                ordermonth = b["orderplan"]["ordermonth"]
+                orderorgi = b["orderplan"]["orderorgi"]
+                orderround = b["orderplan"]["orderround"]
+                balqty = b["orderplan"]["balqty"]
+                shippedflg = b["orderplan"]["shipped_flg"]
+                shippedqty = b["orderplan"]["shipped_qty"]
+                upddte = b["orderplan"]["updtime"]
+                allocateqty = 0
+                bidrfl = b["orderplan"]["bidrfl"]
+                deleteflg = b["orderplan"]["delete_flg"]
+                reasoncd = b["orderplan"]["reasoncd"]
+                firmflg = b["orderplan"]["firm_flg"]
+                bicomd = b["orderplan"]["bicomd"]
+                bistdp = b["orderplan"]["bistdp"]
+                binewt = b["orderplan"]["binewt"]
+                bigrwt = b["orderplan"]["bigrwt"]
+                bileng = b["orderplan"]["bileng"]
+                biwidt = b["orderplan"]["biwidt"]
+                bihigh = b["orderplan"]["bihigh"]
+                curinv = "-"
+                oldinv = ""
+                sysdte = b["orderplan"]["updtime"]
+                poupdflag = ""
+                createdby = "SKTSYS"
+                modifiedby = "SKTSYS"
+                lotno = b["orderplan"]["lotno"]
+                orderstatus = 0
+                print(f"{seq}. ORDER DETAIL: {order_id}")
+                seq += 1
+
+            # Update Order Status Sync
+
     except Exception as ex:
         print(ex)
         pass
@@ -473,8 +547,10 @@ def merge_receive():
 if __name__ == "__main__":
     headers = main()
     if headers != None:
-        get_mailbox(headers)
-        upload_edi(headers)
+        # get_mailbox(headers)
+        # upload_edi(headers)
+        # sync_receive(headers)
+        sync_order(headers)
         sign_out(headers)
 
     # merge_receive()
