@@ -363,6 +363,7 @@ def sync_order(headers):
         response = requests.request(
             "GET", f"{api_host}/order/ent", headers=headers, data={})
         data = response.json()["data"]
+        seq_ord = 1
         for ord in data:
             # print(ord)
             id = ord["id"]
@@ -392,7 +393,7 @@ def sync_order(headers):
 
             # print(f"factory={factory} inv_prefix={inv_prefix} label_prefix={label_prefix} shiptype={shiptype} affcode={affcode} pc={pc} commercial={commercial} sampflg={sampflg} order_title={order_title} etdtap={etdtap} bioat={bioat} bishpc={bishpc} biivpx={biivpx} bisafn={bisafn} ship_form={ship_form} ship_to={ship_to} loading_area={loading_area} privilege={privilege} zone_code={zone_code} running_seq={running_seq} ")
             print(f"----------------------------------------------------------------")
-            print(f"INV: {inv_no} ==> {id}")
+            print(f"{seq_ord}. INV: {inv_no} ==> {id}")
             seq = 1
             for b in ord["order_detail"]:
                 order_id = b["id"]
@@ -438,6 +439,7 @@ def sync_order(headers):
             response = requests.request(
                 "PUT", f"{api_host}/order/ent/{id}", headers=headers, data=payload)
             print(f"UPDATE STATUS SYNC: {response.status_code}")
+            seq_ord += 1
 
     except Exception as ex:
         print(ex)
