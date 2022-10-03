@@ -381,7 +381,7 @@ def sync_order(headers):
             etdtap = str(ord["etd_date"])[:10]
             bioat = ord["bioat"]
             bishpc = ord["consignee"]["customer"]["title"]
-            biivpx = ord["consignee"]["prefix"]
+            biivpx = ord["commercial"]["prefix"]##ord["consignee"]["prefix"]
             bisafn = ord["consignee"]["customer"]["description"]
             ship_form = ord["ship_form"]
             ship_to = ord["ship_to"]
@@ -389,11 +389,15 @@ def sync_order(headers):
             privilege = ord["privilege"]
             zone_code = ord["zone_code"]
             running_seq = int(ord["running_seq"])
+            if ord["commercial"]["prefix"] == "-":
+                biivpx = ord["consignee"]["prefix"]
+
             inv_no = f"{inv_prefix}{biivpx}{etdtap[3:4]}{running_seq:04d}{shiptype}"
+            ref_inv = f"{biivpx}-{str(etdtap).replace('-', '')}-{running_seq:04d}"
 
             # print(f"factory={factory} inv_prefix={inv_prefix} label_prefix={label_prefix} shiptype={shiptype} affcode={affcode} pc={pc} commercial={commercial} sampflg={sampflg} order_title={order_title} etdtap={etdtap} bioat={bioat} bishpc={bishpc} biivpx={biivpx} bisafn={bisafn} ship_form={ship_form} ship_to={ship_to} loading_area={loading_area} privilege={privilege} zone_code={zone_code} running_seq={running_seq} ")
             print(f"----------------------------------------------------------------")
-            print(f"{seq_ord}. INV: {inv_no} ==> {id}")
+            print(f"{seq_ord}. {etdtap} INV: {inv_no} REF: {ref_inv} ==> {id}")
             seq = 1
             for b in ord["order_detail"]:
                 order_id = b["id"]
