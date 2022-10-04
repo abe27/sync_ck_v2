@@ -193,7 +193,7 @@ def get_mailbox(headers):
                                     time.sleep(5)
                             i += 1
     except Exception as ex:
-        print(ex)
+        print(f"get mail box: {str(ex)}")
         pass
 
 
@@ -249,7 +249,7 @@ def upload_edi(header):
             # new dir
             # time.sleep(5)
     except Exception as ex:
-        print(ex)
+        print(f"upload_edi error: %s" % ex)
         pass
 
 
