@@ -559,7 +559,7 @@ if __name__ == "__main__":
     if headers != None:
         get_mailbox(headers)
         upload_edi(headers)
-        # sync_receive(headers)
+        sync_receive(headers)
         # sync_order(headers)
         sign_out(headers)
 
