@@ -6,7 +6,7 @@ import time
 import requests
 import urllib
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env.local"))
 
 api_host = os.getenv("API_HOST")
 api_user = os.getenv("API_USERNAME")
