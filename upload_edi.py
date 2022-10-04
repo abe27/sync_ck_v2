@@ -558,11 +558,11 @@ def merge_receive():
 if __name__ == "__main__":
     headers = main()
     if headers != None:
-        # get_mailbox(headers)
-        # upload_edi(headers)
+        get_mailbox(headers)
+        upload_edi(headers)
         # sync_receive(headers)
-        sync_order(headers)
+        # sync_order(headers)
         sign_out(headers)
 
-    # merge_receive()
+    merge_receive()
     sys.exit(0)
