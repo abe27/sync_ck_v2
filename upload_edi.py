@@ -76,6 +76,13 @@ def get_rvn():
     return rvm_no
 
 
+def create_log(title, description, is_status):
+    payload = f'title={title}&description={description}&is_active={str(is_status).lower()}'
+    response = requests.request("POST", f"{api_host}/logs", headers={
+                                'Content-Type': 'application/x-www-form-urlencoded'}, data=payload)
+    print(f"create log {title} status: {response.status_code}")
+
+
 def main():
     headers = None
     try:
@@ -91,8 +98,11 @@ def main():
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         print(f"sign in is: {token}")
+        create_log("User Authorization", f"{api_user} is success", True)
     except Exception as e:
         print(e)
+        create_log("User Authorization",
+                   f"{api_user} is error {str(e)}", False)
         pass
 
     return headers
@@ -189,11 +199,14 @@ def get_mailbox(headers):
                                     for p in txt:
                                         f.write(p.text)
                                     f.close()
+                                    create_log(
+                                        "Download EDI", f"{file_name} download is success", True)
                                     print(f"download file: {file_name}")
                                     time.sleep(5)
                             i += 1
     except Exception as ex:
         print(f"get mail box: {str(ex)}")
+        create_log("Download EDI", f"{file_name} download is {str(ex)}", False)
         pass
 
 
@@ -239,6 +252,8 @@ def upload_edi(header):
                         f.close()
                         print(
                             f"{rn} ==> upload file edi: {batch_name} status: {response.status_code}")
+                        create_log("Upload EDI To SPL CLOUD",
+                                   f"{batch_name} upload is success", True)
                         # backup file edi
                         to_dir = os.path.join(distination_dir, x)
                         if os.path.exists(to_dir) != True:
@@ -250,6 +265,8 @@ def upload_edi(header):
             # time.sleep(5)
     except Exception as ex:
         print(f"upload_edi error: %s" % ex)
+        create_log("Upload EDI To SPL CLOUD",
+                   f"{batch_name} upload is error {str(ex)}", False)
         pass
 
 
@@ -342,6 +359,8 @@ def sync_receive(headers):
                 f"UPDATE {transfer_out_no} SET STATUS: {response.status_code}")
             _ctn = f"{int(ctn):,}"
             d = datetime.now()
+            create_log(
+                "Sync Receive", f"""{whs_name} NO: {transfer_out_no} ITEM: {seq} CTN: {_ctn} Date: {d.strftime('%Y-%m-%d %H:%M:%S')}""", True)
             msg = f"""เปิดรอบ {whs_name}\nเลขที่: {transfer_out_no}\nจำนวน: {seq} กล่อง: {_ctn}\nวดป.: {d.strftime('%Y-%m-%d %H:%M:%S')}"""
             token = os.getenv("LINE_NOTIFICATION_DOM_TOKEN")
             if whs_name == "DOM":
@@ -352,7 +371,9 @@ def sync_receive(headers):
         pool.release(Oracon)
         pool.close()
     except Exception as ex:
-        print(ex)
+        print(f"Error Sync Receiver: {ex}")
+        create_log("Sync Receive",
+                   f"""{transfer_out_no} is error {str(ex)}""", False)
         pass
 
 
@@ -456,8 +477,11 @@ def sign_out(headers):
         response = requests.request(
             "GET", f"{api_host}/auth/logout", headers=headers, data={})
         print(f"sign out is: {response.status_code}")
+        create_log("User Authorization", f"""SignOut is success""", True)
     except Exception as e:
         print(e)
+        create_log("User Authorization",
+                   f"""SignOut is error {str(e)}""", False)
         pass
 
 
@@ -546,11 +570,14 @@ def merge_receive():
                 token = os.getenv("LINE_NOTIFICATION_DOM_TOKEN")
 
             line_notification(token, msg)
+            create_log(
+                "Merge Receive", f"""{whs_name} No: {merge_no} Item: {seq} CTN: {_ctn} Merge: {receive_key} Date: {d.strftime('%Y-%m-%d %H:%M:%S')}""", True)
 
         Oracon.commit()
         pool.release(Oracon)
         pool.close()
     except Exception as e:
+        create_log("Merge Receive", str(e), False)
         pass
 
 
