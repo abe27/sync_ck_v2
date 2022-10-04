@@ -200,8 +200,7 @@ def get_mailbox(headers):
 def upload_edi(header):
     try:
         headers = {'Authorization': header["Authorization"]},
-        list_dir = os.listdir(os.path.join(
-            os.path.dirname(__file__), source_dir))
+        list_dir = os.listdir(source_dir)
         list_dir.sort()
         rn = 1
         for x in list_dir:
