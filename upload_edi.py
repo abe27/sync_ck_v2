@@ -436,6 +436,7 @@ def sync_order(headers):
                 lotno = b["orderplan"]["lotno"]
                 orderstatus = 0
                 print(f"{seq}. ORDER DETAIL: {order_id}")
+                
                 seq += 1
 
             # Update Order Status Sync
