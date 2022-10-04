@@ -11,7 +11,7 @@ import cx_Oracle
 from nanoid import generate
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env.local"))
 
 api_host = os.getenv("API_HOST")
 api_user = os.getenv("API_USERNAME")
@@ -381,7 +381,7 @@ def sync_order(headers):
             etdtap = str(ord["etd_date"])[:10]
             bioat = ord["bioat"]
             bishpc = ord["consignee"]["customer"]["title"]
-            biivpx = ord["commercial"]["prefix"]##ord["consignee"]["prefix"]
+            biivpx = ord["commercial"]["prefix"]  # ord["consignee"]["prefix"]
             bisafn = ord["consignee"]["customer"]["description"]
             ship_form = ord["ship_form"]
             ship_to = ord["ship_to"]
@@ -436,7 +436,7 @@ def sync_order(headers):
                 lotno = b["orderplan"]["lotno"]
                 orderstatus = 0
                 print(f"{seq}. ORDER DETAIL: {order_id}")
-                
+
                 seq += 1
 
             # Update Order Status Sync
