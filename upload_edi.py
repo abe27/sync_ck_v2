@@ -583,12 +583,12 @@ def merge_receive():
 
 def move_to_group(whs, tagrp):
     pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
-                                     password=ORA_USERNAME,
-                                     dsn=ORA_DNS,
-                                     min=2,
-                                     max=100,
-                                     increment=1,
-                                     encoding="UTF-8")
+                                 password=ORA_USERNAME,
+                                 dsn=ORA_DNS,
+                                 min=2,
+                                 max=100,
+                                 increment=1,
+                                 encoding="UTF-8")
     # Acquire a connection from the pool
     Oracon = pool.acquire()
     Oracur = Oracon.cursor()
@@ -605,22 +605,12 @@ def move_to_group(whs, tagrp):
         )).fetchall():
             tagrp = str(x[0])
             partno = str(x[1])
-            lotno = str(x[2])
-            runningno = str(x[3])
-            caseid = str(x[4])
-            caseno = str(x[5])
-            qty = int(str(x[6]))
-            shelve = str(x[7])
-            palletkey = str(x[8])
-            ipaddres = str(x[9])
-            siid = str(x[10])
-            issueno = str(x[11])
             txt = "DOM"
             if tagrp == "C":
                 txt = "COM"
 
             # check master part
-            print(f"MASTER PART PARTNO='{partno}' TAGRP='{mvTagrp}'")
+            # print(f"MASTER PART PARTNO='{partno}' TAGRP='{mvTagrp}'")
             part = (Oracur.execute(
                 f"SELECT count(PARTNO) FROM TXP_PART WHERE PARTNO='{partno}' AND TAGRP='{mvTagrp}'"
             )).fetchone()[0]
@@ -633,7 +623,7 @@ def move_to_group(whs, tagrp):
                     print(e)
                     pass
             # check master ledger
-            print(f"MASTER LEDGER PARTNO='{partno}' TAGRP='{mvTagrp}'")
+            # print(f"MASTER LEDGER PARTNO='{partno}' TAGRP='{mvTagrp}'")
             ledger = (Oracur.execute(
                 f"SELECT count(PARTNO) FROM TXP_LEDGER WHERE PARTNO='{partno}' AND TAGRP='{mvTagrp}'"
             )).fetchone()[0]
@@ -652,6 +642,8 @@ def move_to_group(whs, tagrp):
             Oracur.execute(
                 f"UPDATE TXP_CARTONDETAILS SET TAGRP='{mvTagrp}' WHERE RUNNINGNO='{serail_no}'"
             )
+            create_log(
+                f"Move Whs", f"Move Part {serail_no} to {mvTagrp}", True)
 
     Oracon.commit()
     pool.release(Oracon)
