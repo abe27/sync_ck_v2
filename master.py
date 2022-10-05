@@ -54,7 +54,6 @@ for r in csvreader:
     response = requests.request(
         "POST", f"{api_host}/consignee", headers=headers, data=payload)
     print(f"Create Consignee {customer} Status: {response.status_code}")
-    time.sleep(0.1)
 
 # read group
 file = open('data/master/group.csv')
@@ -72,7 +71,6 @@ for r in csvreader:
         "POST", f"{api_host}/order/consignee", headers=headers, data=payload)
     print(
         f"create consignee {username} ==> {affcode} customer:{customer} group is: {response.status_code}")
-    time.sleep(0.1)
 
 # read loading area
 file = open('data/master/loading_area.csv')
@@ -87,13 +85,13 @@ for r in csvreader:
     response = requests.request(
         "POST", f"{api_host}/order/loading", headers=headers, data=payload)
     print(f"create loading Area {loading_area} is: {response.status_code}")
-    time.sleep(0.1)
+    # time.sleep(0.1)
 
 # read loading area
 for a in range(97, 123):
     location = f"S-{str(chr(a)).upper()}"
     for i in range(1, 5):
-        for e in range(1, 14):
+        for e in range(1, 15):
             for j in range(1, 5):
                 title = f"{location}{i:02d}-{e:02d}-{j:02d}"
                 payload = f'title={title}&description={title}&is_active=true'
@@ -109,8 +107,18 @@ for title in l:
     response = requests.request(
         "POST", f"{api_host}/location", headers=headers, data=payload)
     print(f"create location {title} is: {response.status_code}")
-    time.sleep(0.1)
+    # time.sleep(0.1)
 
+
+# # update stock
+# file = open('data/master/stock_10.csv')
+# csvreader = csv.reader(file)
+# for r in csvreader:
+#     if r[0] == 'name':
+#         tagrp = r[0]
+#         serial_no = r[1]
+#         print(f"update stock {serial_no}")
+#         time.sleep(0.1)
 
 # logout
 response = requests.request(
