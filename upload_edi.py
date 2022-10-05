@@ -581,6 +581,90 @@ def merge_receive():
         pass
 
 
+def move_to_group(whs, tagrp):
+    pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
+                                     password=ORA_USERNAME,
+                                     dsn=ORA_DNS,
+                                     min=2,
+                                     max=100,
+                                     increment=1,
+                                     encoding="UTF-8")
+    # Acquire a connection from the pool
+    Oracon = pool.acquire()
+    Oracur = Oracon.cursor()
+    mvTagrp = "D"
+    if tagrp == "D":
+        mvTagrp = "C"
+
+    for i in (Oracur.execute(
+            f"SELECT RUNNINGNO FROM TXP_CARTONDETAILS WHERE SHELVE='{whs}' AND TAGRP='{tagrp}'"
+    )).fetchall():
+        serail_no = str(i[0])
+        for x in (Oracur.execute(
+                f"SELECT TAGRP,PARTNO,LOTNO,RUNNINGNO,CASEID,CASENO,STOCKQUANTITY,SHELVE,PALLETKEY,(SELECT SYS_CONTEXT('USERENV','IP_ADDRESS') FROM dual),'SYSTEM',invoiceno FROM TXP_CARTONDETAILS WHERE RUNNINGNO='{str(i[0])}'"
+        )).fetchall():
+            tagrp = str(x[0])
+            partno = str(x[1])
+            lotno = str(x[2])
+            runningno = str(x[3])
+            caseid = str(x[4])
+            caseno = str(x[5])
+            qty = int(str(x[6]))
+            shelve = str(x[7])
+            palletkey = str(x[8])
+            ipaddres = str(x[9])
+            siid = str(x[10])
+            issueno = str(x[11])
+            txt = "DOM"
+            if tagrp == "C":
+                txt = "COM"
+
+            # check master part
+            print(f"MASTER PART PARTNO='{partno}' TAGRP='{mvTagrp}'")
+            part = (Oracur.execute(
+                f"SELECT count(PARTNO) FROM TXP_PART WHERE PARTNO='{partno}' AND TAGRP='{mvTagrp}'"
+            )).fetchone()[0]
+            if part == 0:
+                try:
+                    Oracur.execute(
+                        f"insert into txp_part(tagrp,partno,partname,carmaker,CD,TYPE,VENDORCD,UNIT,upddte,sysdte)values('{mvTagrp}','{partno}','{partno}','{txt}','02','PART','{txt}','BOX',current_timestamp,current_timestamp)"
+                    )
+                except Exception as e:
+                    print(e)
+                    pass
+            # check master ledger
+            print(f"MASTER LEDGER PARTNO='{partno}' TAGRP='{mvTagrp}'")
+            ledger = (Oracur.execute(
+                f"SELECT count(PARTNO) FROM TXP_LEDGER WHERE PARTNO='{partno}' AND TAGRP='{mvTagrp}'"
+            )).fetchone()[0]
+            if ledger == 0:
+                try:
+                    Oracur.execute(
+                        f"""INSERT INTO TXP_LEDGER(PARTNO,TAGRP,MINIMUM,MAXIMUM,WHS,PICSHELFBIN,STKSHELFBIN,OVSSHELFBIN,OUTERPCS,UPDDTE, SYSDTE)VALUES('{partno}','{mvTagrp}',0,0,'{txt}','PNON','SNON','ONON',0,current_timestamp,current_timestamp)"""
+                    )
+                except Exception as e:
+                    print(e)
+                    pass
+
+            # Oracur.execute(
+            #     f"CALL SEND_CARTON_TRIGGER('{tagrp}','{partno}','{lotno}','{runningno}','{caseid}','{caseno}',{qty},'{shelve}','{palletkey}', '{ipaddres}', 'MOVE TO {txt}', '{issueno}')"
+            # )
+            Oracur.execute(
+                f"UPDATE TXP_CARTONDETAILS SET TAGRP='{mvTagrp}' WHERE RUNNINGNO='{serail_no}'"
+            )
+
+    Oracon.commit()
+    pool.release(Oracon)
+    pool.close()
+
+
+def move_whs():
+    # move ck2 to ck1
+    move_to_group('S-CK1', 'C')
+    # move ck1 to ck2
+    move_to_group('S-CK2', 'D')
+
+
 if __name__ == "__main__":
     headers = main()
     if headers != None:
@@ -591,4 +675,5 @@ if __name__ == "__main__":
         sign_out(headers)
 
     merge_receive()
+    move_whs()
     sys.exit(0)
