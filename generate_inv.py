@@ -41,7 +41,7 @@ def main():
             "GET", f"{api_host}/auth/logout", headers=headers, data={})
         print(response.text)
         status = True
-        if response.status_code != 201:
+        if response.status_code == 500:
             status = False
         create_log("Auto Generate Invoice", f"Generate Invoice {response.status_code}", status)
     
