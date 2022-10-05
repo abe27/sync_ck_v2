@@ -91,8 +91,8 @@ for r in csvreader:
 for a in range(97, 123):
     location = f"S-{str(chr(a)).upper()}"
     for i in range(1, 5):
-        for e in range(1, 15):
-            for j in range(1, 5):
+        for e in range(1, 20):
+            for j in range(1, 6):
                 title = f"{location}{i:02d}-{e:02d}-{j:02d}"
                 payload = f'title={title}&description={title}&is_active=true'
                 response = requests.request(
