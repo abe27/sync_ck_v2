@@ -141,8 +141,7 @@ try:
             Oracur.execute(f"UPDATE TXP_CARTONDETAILS SET IS_CHECK=1 WHERE RUNNINGNO='{serial_no}'")
             Oracon.commit()
             time.sleep(1)
-
-        print(f"{n}. update {tagrp} stock {serial_no}")
+            print(f"{n}. update {tagrp} stock {serial_no} id: {obj[0]}")
         n += 1
 
     # Oracon.commit()
