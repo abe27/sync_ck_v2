@@ -12,6 +12,12 @@ api_host = os.getenv("API_HOST")
 api_user = os.getenv("API_USERNAME")
 api_password = os.getenv("API_PASSWORD")
 
+def create_log(title, description, is_status):
+    payload = f'title={title}&description={description}&is_active={str(is_status).lower()}'
+    response = requests.request("POST", f"{api_host}/logs", headers={
+                                'Content-Type': 'application/x-www-form-urlencoded'}, data=payload)
+    print(f"create log {title} status: {response.status_code}")
+
 def main():
     try:
         # login
@@ -34,9 +40,12 @@ def main():
         response = requests.request(
             "GET", f"{api_host}/auth/logout", headers=headers, data={})
         print(response.text)
+        create_log("Auto Generate Invoice", f"Generate Invoice {response.status_code}", True)
     
     except Exception as e:
             print(e)
+            create_log("Auto Generate Invoice", f"Generate Invoice is error {str(e)}", False)
+            pass
 
 if __name__ == "__main__":
     main()
