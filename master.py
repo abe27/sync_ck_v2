@@ -140,7 +140,7 @@ try:
         if obj != None:
             Oracur.execute(f"UPDATE TXP_CARTONDETAILS SET IS_CHECK=1 WHERE RUNNINGNO='{serial_no}'")
             Oracon.commit()
-            time.sleep(1)
+            time.sleep(3)
             print(f"{n}. update {tagrp} stock {serial_no} id: {obj[0]}")
         n += 1
 
