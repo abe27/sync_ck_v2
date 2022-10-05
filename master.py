@@ -24,7 +24,7 @@ headers = {
 }
 # print(headers)
 # read user
-file = open('data/master/user.csv')
+file = open(os.path.join(os.path.dirname(__file__), 'data/master/user.csv'))
 csvreader = csv.reader(file)
 for r in csvreader:
     username = r[0]
@@ -41,7 +41,7 @@ for r in csvreader:
 print(f"----------------------------------------------------------------")
 
 # read consignee
-file = open('data/master/consignee.csv')
+file = open(os.path.join(os.path.dirname(__file__), 'data/master/consignee.csv'))
 csvreader = csv.reader(file)
 for r in csvreader:
     whs = r[0]
@@ -56,7 +56,7 @@ for r in csvreader:
     print(f"Create Consignee {customer} Status: {response.status_code}")
 
 # read group
-file = open('data/master/group.csv')
+file = open(os.path.join(os.path.dirname(__file__), 'data/master/group.csv'))
 csvreader = csv.reader(file)
 for r in csvreader:
     username = r[0]
@@ -73,7 +73,7 @@ for r in csvreader:
         f"create consignee {username} ==> {affcode} customer:{customer} group is: {response.status_code}")
 
 # read loading area
-file = open('data/master/loading_area.csv')
+file = open(os.path.join(os.path.dirname(__file__), 'data/master/loading_area.csv'))
 csvreader = csv.reader(file)
 for r in csvreader:
     bioat = r[0]
@@ -111,14 +111,13 @@ for title in l:
 
 
 # # update stock
-# file = open('data/master/stock_10.csv')
-# csvreader = csv.reader(file)
-# for r in csvreader:
-#     if r[0] == 'name':
-#         tagrp = r[0]
-#         serial_no = r[1]
-#         print(f"update stock {serial_no}")
-#         time.sleep(0.1)
+file = open(os.path.join(os.path.dirname(__file__), 'data/master/stock_10.csv'))
+csvreader = csv.reader(file)
+for r in csvreader:
+    if r[0] == 'name':
+        tagrp = r[0]
+        serial_no = r[1]
+        print(f"update {tagrp} stock {serial_no}")
 
 # logout
 response = requests.request(
