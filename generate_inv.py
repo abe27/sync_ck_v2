@@ -40,7 +40,10 @@ def main():
         response = requests.request(
             "GET", f"{api_host}/auth/logout", headers=headers, data={})
         print(response.text)
-        create_log("Auto Generate Invoice", f"Generate Invoice {response.status_code}", True)
+        status = True
+        if response.status_code != 201:
+            status = False
+        create_log("Auto Generate Invoice", f"Generate Invoice {response.status_code}", status)
     
     except Exception as e:
             print(e)
