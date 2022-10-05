@@ -140,17 +140,17 @@ try:
         if obj != None:
             Oracur.execute(f"UPDATE TXP_CARTONDETAILS SET IS_CHECK=1 WHERE RUNNINGNO='{serial_no}'")
             Oracon.commit()
-            time.sleep(1)
+            time.sleep(0.5)
             print(f"{n}. update {tagrp} stock {serial_no} id: {obj[0]}")
         n += 1
 
     ### Sync Carton
-    Oracur.execute(f"SELECT RUNNINGNO FROM TXP_CARTONDETAILS WHERE STOCKQUANTITY > 0 ORDER BY PARTNO,LOTNO,RUNNINGNO")
+    Oracur.execute(f"SELECT RUNNINGNO FROM TXP_CARTONDETAILS ORDER BY PARTNO,LOTNO,RUNNINGNO")
     n = 1
     for r in Oracur.fetchall():
         Oracur.execute(f"UPDATE TXP_CARTONDETAILS SET IS_CHECK=1 WHERE RUNNINGNO='{r[0]}'")
         Oracon.commit()
-        time.sleep(1)
+        time.sleep(0.5)
         print(f"{n}. update stock {r[0]}")
         n += 1
     # Oracon.commit()
