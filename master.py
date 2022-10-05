@@ -3,12 +3,17 @@ import os
 import time
 import requests
 import urllib
+import cx_Oracle
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env.local"))
 
 api_host = os.getenv("API_HOST")
 api_user = os.getenv("API_USERNAME")
 api_password = os.getenv("API_PASSWORD")
+
+ORA_DNS = f"{os.environ.get('ORAC_DB_HOST')}/{os.environ.get('ORAC_DB_SERVICE')}"
+ORA_USERNAME = os.environ.get('ORAC_DB_USERNAME')
+ORA_PASSWORD = os.environ.get('ORAC_DB_PASSWORD')
 
 # login
 passwd = urllib.parse.quote(api_password)
@@ -87,38 +92,65 @@ headers = {
 #     print(f"create loading Area {loading_area} is: {response.status_code}")
 #     # time.sleep(0.1)
 
-# read loading area
-for a in range(97, 123):
-    location = f"S-{str(chr(a)).upper()}"
-    for i in range(1, 5):
-        for e in range(1, 21):
-            for j in range(1, 6):
-                title = f"{location}{i:02d}-{e:02d}-{j:02d}"
-                payload = f'title={title}&description={title}&is_active=true'
-                response = requests.request(
-                    "POST", f"{api_host}/location", headers=headers, data=payload)
-                print(f"create location {title} is: {response.status_code}")
-                time.sleep(0.1)
+# # read loading area
+# for a in range(97, 123):
+#     location = f"S-{str(chr(a)).upper()}"
+#     for i in range(1, 5):
+#         for e in range(1, 16):
+#             for j in range(1, 6):
+#                 title = f"{location}{i:02d}-{e:02d}-{j:02d}"
+#                 payload = f'title={title}&description={title}&is_active=true'
+#                 response = requests.request(
+#                     "POST", f"{api_host}/location", headers=headers, data=payload)
+#                 print(f"create location {title} is: {response.status_code}")
+#                 time.sleep(0.1)
 
-l = ["S-P58", "S-P59", "S-CK1", "S-CK2", "S-OVER-Y01", "S-OVER-Y02", "S-OVER-Y03", "S-OVER-Y04", "S-OVER-Y05",
-     "S-OVER-Y06", "S-OVER1", "S-OVER2", "S-OVER3", "S-HOLD", "S-REPALLET", "S-RECHECK", "SNON", "S-XXX", "S-PLOUT", "-"]
-for title in l:
-    payload = f'title={title}&description={title}&is_active=true'
-    response = requests.request(
-        "POST", f"{api_host}/location", headers=headers, data=payload)
-    print(f"create location {title} is: {response.status_code}")
-    # time.sleep(0.1)
+# l = ["S-P58", "S-P59", "S-CK1", "S-CK2", "S-OVER-Y01", "S-OVER-Y02", "S-OVER-Y03", "S-OVER-Y04", "S-OVER-Y05",
+#      "S-OVER-Y06", "S-OVER1", "S-OVER2", "S-OVER3", "S-HOLD", "S-REPALLET", "S-RECHECK", "SNON", "S-XXX", "S-PLOUT", "-"]
+# for title in l:
+#     payload = f'title={title}&description={title}&is_active=true'
+#     response = requests.request(
+#         "POST", f"{api_host}/location", headers=headers, data=payload)
+#     print(f"create location {title} is: {response.status_code}")
+#     # time.sleep(0.1)
 
 
-# # update stock
-file = open(os.path.join(os.path.dirname(__file__), 'data/master/stock_10.csv'))
-csvreader = csv.reader(file)
-for r in csvreader:
-    if r[0] == 'name':
+try:
+    # # update stock
+    pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
+                                 password=ORA_USERNAME,
+                                 dsn=ORA_DNS,
+                                 min=2,
+                                 max=100,
+                                 increment=1,
+                                 encoding="UTF-8")
+    # Acquire a connection from the pool
+    Oracon = pool.acquire()
+    Oracur = Oracon.cursor()
+    file = open(os.path.join(os.path.dirname(
+        __file__), 'data/master/stock_10.csv'))
+    csvreader = csv.reader(file)
+    n = 1
+    for r in csvreader:
         tagrp = r[0]
         serial_no = r[1]
-        print(f"update {tagrp} stock {serial_no}")
+        Oracur.execute(
+            f"SELECT rowid,TAGRP,PARTNO,LOTNO,RUNNINGNO,CASEID,CASENO,STOCKQUANTITY,SHELVE,(SELECT SYS_CONTEXT('USERENV','IP_ADDRESS') FROM dual),SIID,PALLETKEY,INVOICENO,SINO FROM TXP_CARTONDETAILS WHERE RUNNINGNO='{serial_no}'")
+        obj = Oracur.fetchone()
+        if obj != None:
+            Oracur.execute(f"UPDATE TXP_CARTONDETAILS SET IS_CHECK=1 WHERE RUNNINGNO='{serial_no}'")
+            Oracon.commit()
+            time.sleep(1)
 
+        print(f"{n}. update {tagrp} stock {serial_no}")
+        n += 1
+
+    # Oracon.commit()
+    pool.release(Oracon)
+    pool.close()
+except Exception as e:
+    print(e)
+    pass
 # logout
 response = requests.request(
     "GET", f"{api_host}/auth/logout", headers=headers, data={})
