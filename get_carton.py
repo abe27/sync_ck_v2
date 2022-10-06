@@ -78,11 +78,13 @@ def fetch_carton():
             pg_cursor.execute(
                 f"select serial_no,is_sync from tbt_check_stocks where serial_no='{serial_no}'")
             stk = pg_cursor.fetchone()
+            txt = "Found"
             if stk is None:
                 pg_cursor.execute(
                     f"insert into tbt_check_stocks(whs, partno, zone, lotno, serial_no, qty, factory, is_out, is_found, is_matched, is_sync, on_date)values('{whs}', '{partno}', '{zone}', '{lotno}', '{serial_no}', {qty}, '{factory}', false, false, false, false, CURRENT_TIMESTAMP)")
                 pgdb.commit()
-            print(f"{n} . insert stock check serial no {serial_no}")
+                txt = "Not Found"
+            print(f"{n} . {txt} stock check serial no {serial_no}")
             n += 1
         # create_log("Sync carton stock", ("running at %s",
         #                                  datetime.now().strftime("%Y%m%d %H:%M:%S")), True)
