@@ -243,6 +243,8 @@ try:
             if response.status_code == 201:
                 pg_cursor.execute(f"update tbt_check_stocks set is_sync=true where serial_no='{serial_no}'")
                 pgdb.commit()
+            
+            time.sleep(0.5)
 
         n += 1
 
