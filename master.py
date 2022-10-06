@@ -1,15 +1,24 @@
 import csv
+from ipaddress import ip_address
 import os
+import shelve
 import time
 import requests
 import urllib
 import cx_Oracle
+from psycopg2.pool import SimpleConnectionPool
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env.local"))
 
 api_host = os.getenv("API_HOST")
 api_user = os.getenv("API_USERNAME")
 api_password = os.getenv("API_PASSWORD")
+
+DB_HOSTNAME = os.environ.get('DATABASE_URL')
+DB_PORT = os.environ.get('DATABASE_PORT')
+DB_NAME = os.environ.get('DATABASE_NAME')
+DB_USERNAME = os.environ.get('DATABASE_USERNAME')
+DB_PASSWORD = os.environ.get('DATABASE_PASSWORD')
 
 ORA_DNS = f"{os.environ.get('ORAC_DB_HOST')}/{os.environ.get('ORAC_DB_SERVICE')}"
 ORA_USERNAME = os.environ.get('ORAC_DB_USERNAME')
@@ -115,8 +124,54 @@ headers = {
 #     # time.sleep(0.1)
 
 
+# try:
+#     # # update stock
+#     pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
+#                                  password=ORA_USERNAME,
+#                                  dsn=ORA_DNS,
+#                                  min=2,
+#                                  max=100,
+#                                  increment=1,
+#                                  encoding="UTF-8")
+#     # Acquire a connection from the pool
+#     Oracon = pool.acquire()
+#     Oracur = Oracon.cursor()
+#     file = open(os.path.join(os.path.dirname(
+#         __file__), 'data/master/stock_10.csv'))
+#     csvreader = csv.reader(file)
+#     n = 1
+#     for r in csvreader:
+#         tagrp = r[0]
+#         serial_no = r[1]
+#         Oracur.execute(
+#             f"SELECT rowid,TAGRP,PARTNO,LOTNO,RUNNINGNO,CASEID,CASENO,STOCKQUANTITY,SHELVE,(SELECT SYS_CONTEXT('USERENV','IP_ADDRESS') FROM dual),SIID,PALLETKEY,INVOICENO,SINO FROM TXP_CARTONDETAILS WHERE RUNNINGNO='{serial_no}'")
+#         obj = Oracur.fetchone()
+#         if obj != None:
+#             Oracur.execute(f"UPDATE TXP_CARTONDETAILS SET IS_CHECK=1 WHERE RUNNINGNO='{serial_no}'")
+#             Oracon.commit()
+#             time.sleep(0.5)
+#             print(f"{n}. update {tagrp} stock {serial_no} id: {obj[0]}")
+#         n += 1
+
+#     ### Sync Carton
+#     Oracur.execute(f"SELECT RUNNINGNO FROM TXP_CARTONDETAILS ORDER BY PARTNO,LOTNO,RUNNINGNO")
+#     n = 1
+#     for r in Oracur.fetchall():
+#         Oracur.execute(f"UPDATE TXP_CARTONDETAILS SET IS_CHECK=1 WHERE RUNNINGNO='{r[0]}'")
+#         Oracon.commit()
+#         time.sleep(0.5)
+#         print(f"{n}. update stock {r[0]}")
+#         n += 1
+#     # Oracon.commit()
+#     pool.release(Oracon)
+#     pool.close()
+# except Exception as e:
+#     print(e)
+#     pass
+
+
+# Get Stock DB
 try:
-    # # update stock
     pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
                                  password=ORA_USERNAME,
                                  dsn=ORA_DNS,
@@ -127,38 +182,77 @@ try:
     # Acquire a connection from the pool
     Oracon = pool.acquire()
     Oracur = Oracon.cursor()
-    file = open(os.path.join(os.path.dirname(
-        __file__), 'data/master/stock_10.csv'))
-    csvreader = csv.reader(file)
+
+    # Initail PostgreSQL Server Pool 10 Live
+    pgdb_conn = SimpleConnectionPool(1,
+                                     20,
+                                     host=DB_HOSTNAME,
+                                     port=DB_PORT,
+                                     user=DB_USERNAME,
+                                     password=DB_PASSWORD,
+                                     database=DB_NAME)
+    pgdb = pgdb_conn.getconn()
+    pg_cursor = pgdb.cursor()
+
+    # Fetch STKDB from the database
+    pg_cursor.execute(
+        f"select partno,serial_no from tbt_check_stocks where is_sync=false order by whs,partno,serial_no")
     n = 1
-    for r in csvreader:
-        tagrp = r[0]
-        serial_no = r[1]
+    for r in pg_cursor.fetchall():
+        part_no = str(r[0])
+        serial_no = str(r[1])
         Oracur.execute(
-            f"SELECT rowid,TAGRP,PARTNO,LOTNO,RUNNINGNO,CASEID,CASENO,STOCKQUANTITY,SHELVE,(SELECT SYS_CONTEXT('USERENV','IP_ADDRESS') FROM dual),SIID,PALLETKEY,INVOICENO,SINO FROM TXP_CARTONDETAILS WHERE RUNNINGNO='{serial_no}'")
+            f"SELECT rowid,TAGRP,PARTNO,LOTNO,RUNNINGNO,CASEID,CASENO,STOCKQUANTITY,SHELVE,(SELECT SYS_CONTEXT('USERENV','IP_ADDRESS') FROM dual),SIID,PALLETKEY,INVOICENO,SINO FROM TXP_CARTONDETAILS WHERE PARTNO='{part_no}' AND RUNNINGNO='{serial_no}'")
         obj = Oracur.fetchone()
-        if obj != None:
-            Oracur.execute(f"UPDATE TXP_CARTONDETAILS SET IS_CHECK=1 WHERE RUNNINGNO='{serial_no}'")
-            Oracon.commit()
-            time.sleep(0.5)
-            print(f"{n}. update {tagrp} stock {serial_no} id: {obj[0]}")
+        if obj is not None:
+            rowid = obj[0]
+            whs = obj[1]
+            # part_no = obj[2]
+            lot_no = obj[3]
+            # serial_no = obj[4]
+            line_no = obj[5]
+            revision_no = obj[6]
+            if revision_no is None:
+                revision_no = "-"
+            qty = obj[7]
+            shelve = obj[8]
+            if shelve is None:
+                shelve = "-"
+
+            ip_address = obj[9]
+            emp_id = obj[10]
+            if emp_id is None:
+                emp_id = "-"
+
+            pallet_no = obj[11]
+            if pallet_no is None:
+                pallet_no = "-"
+
+            invoice_no = obj[12]
+            description = obj[13]
+            if description is None:
+                description = "-"
+
+            payload = f'row_id={rowid}&whs={whs}&part_no={part_no}&lot_no={lot_no}&serial_no={serial_no}&die_no={line_no}&rev_no={revision_no}&qty={qty}&shelve={shelve}&ip_address={ip_address}&emp_id={emp_id}&ref_no={pallet_no}&receive_no={invoice_no}&description={description}'
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            response = requests.request("POST", f"{api_host}/carton/history", headers=headers, data=payload)
+            print("%d . %s ==> %s %s serial_no = %s status code = %s" %
+                  (n, rowid, whs, part_no, serial_no, response.status_code))
+
+            ### after create carton history
+            if response.status_code == 201:
+                pg_cursor.execute(f"update tbt_check_stocks set is_sync=true where serial_no='{serial_no}'")
+                pgdb.commit()
+
         n += 1
 
-    ### Sync Carton
-    Oracur.execute(f"SELECT RUNNINGNO FROM TXP_CARTONDETAILS ORDER BY PARTNO,LOTNO,RUNNINGNO")
-    n = 1
-    for r in Oracur.fetchall():
-        Oracur.execute(f"UPDATE TXP_CARTONDETAILS SET IS_CHECK=1 WHERE RUNNINGNO='{r[0]}'")
-        Oracon.commit()
-        time.sleep(0.5)
-        print(f"{n}. update stock {r[0]}")
-        n += 1
-    # Oracon.commit()
     pool.release(Oracon)
     pool.close()
 except Exception as e:
     print(e)
     pass
+
+
 # logout
 response = requests.request(
     "GET", f"{api_host}/auth/logout", headers=headers, data={})
