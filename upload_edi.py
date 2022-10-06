@@ -24,8 +24,16 @@ ORA_PASSWORD = os.environ.get('ORAC_DB_PASSWORD')
 distination_dir = "data/edi"
 source_dir = "data/download"
 
+line_inj_dom = ""
+line_inj_com = ""
+line_aw_com = ""
 
-def line_notification(token, msg):
+
+def line_notification(whs, msg):
+    token = line_inj_dom
+    if whs == "COM":
+        token = line_inj_com
+
     try:
         url = "https://notify-api.line.me/api/notify"
         payload = f"message={msg}"
@@ -106,6 +114,29 @@ def main():
         pass
 
     return headers
+
+
+def get_line_token(headers):
+    payload = {}
+    response = requests.request(
+        "GET", f"{api_host}/notify", headers=headers, data=payload)
+    obj = response.json()
+    line_inj_dom = ""
+    line_inj_com = ""
+    line_aw_com = ""
+    for i in obj["data"]:
+        if i["whs"]["title"] == "DOM" and i["factory"]["title"] == "INJ":
+            line_inj_dom = str(i["token"])
+
+        if i["whs"]["title"] == "COM" and i["factory"]["title"] == "INJ":
+            line_inj_com = str(i["token"])
+
+        if i["whs"]["title"] == "COM" and i["factory"]["title"] == "AW":
+            line_aw_com = str(i["token"])
+
+        print("DOM: %s COM: %s AW: %s" %
+              (line_inj_dom, line_inj_com, line_aw_com))
+        print(f"--------------------------------")
 
 
 def get_mailbox(headers):
@@ -362,11 +393,7 @@ def sync_receive(headers):
             create_log(
                 "Sync Receive", f"""{whs_name} NO: {transfer_out_no} ITEM: {seq} CTN: {_ctn} Date: {d.strftime('%Y-%m-%d %H:%M:%S')}""", True)
             msg = f"""เปิดรอบ {whs_name}\nเลขที่: {transfer_out_no}\nจำนวน: {seq} กล่อง: {_ctn}\nวดป.: {d.strftime('%Y-%m-%d %H:%M:%S')}"""
-            token = os.getenv("LINE_NOTIFICATION_DOM_TOKEN")
-            if whs_name == "DOM":
-                token = os.getenv("LINE_NOTIFICATION_TOKEN")
-
-            line_notification(token, msg)
+            line_notification(whs_name, msg)
 
         pool.release(Oracon)
         pool.close()
@@ -565,11 +592,7 @@ def merge_receive():
             receive_key = ",".join(old_key)
             _ctn = f"{ctn:,}"
             msg = f"""รวมรอบ INJ {whs_name}\nรอบ: {merge_no}\nจำนวน: {seq} กล่อง: {_ctn}\nรอบที่รวม: {receive_key}\nวดป.: {d.strftime('%Y-%m-%d %H:%M:%S')}"""
-            token = os.getenv("LINE_NOTIFICATION_TOKEN")
-            if whs_name == "CK-1":
-                token = os.getenv("LINE_NOTIFICATION_DOM_TOKEN")
-
-            line_notification(token, msg)
+            line_notification(whs, msg)
             create_log(
                 "Merge Receive", f"""{whs_name} No: {merge_no} Item: {seq} CTN: {_ctn} Merge: {receive_key} Date: {d.strftime('%Y-%m-%d %H:%M:%S')}""", True)
 
@@ -660,6 +683,7 @@ def move_whs():
 if __name__ == "__main__":
     headers = main()
     if headers != None:
+        get_line_token(headers)
         get_mailbox(headers)
         upload_edi(headers)
         sync_receive(headers)
