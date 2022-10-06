@@ -244,7 +244,7 @@ try:
                 pg_cursor.execute(f"update tbt_check_stocks set is_sync=true where serial_no='{serial_no}'")
                 pgdb.commit()
             
-            time.sleep(0.5)
+            time.sleep(0.2)
 
         n += 1
 
