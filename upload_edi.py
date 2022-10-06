@@ -28,6 +28,12 @@ line_inj_dom = ""
 line_inj_com = ""
 line_aw_com = ""
 
+def create_log(title, description, is_status):
+    payload = f'title={title}&description={description}&is_active={str(is_status).lower()}'
+    response = requests.request("POST", f"{api_host}/logs", headers={
+                                'Content-Type': 'application/x-www-form-urlencoded'}, data=payload)
+    print(f"create log {title} status: {response.status_code}")
+
 
 def line_notification(whs, msg):
     token = line_inj_dom
@@ -51,6 +57,7 @@ def line_notification(whs, msg):
             return True
     except Exception as ex:
         print(ex)
+        create_log("LineNotify error", f"{msg} err: {str(ex)}", False)
         pass
 
     return False
@@ -82,14 +89,6 @@ def get_rvn():
     pool.release(Oracon)
     pool.close()
     return rvm_no
-
-
-def create_log(title, description, is_status):
-    payload = f'title={title}&description={description}&is_active={str(is_status).lower()}'
-    response = requests.request("POST", f"{api_host}/logs", headers={
-                                'Content-Type': 'application/x-www-form-urlencoded'}, data=payload)
-    print(f"create log {title} status: {response.status_code}")
-
 
 def main():
     headers = None
