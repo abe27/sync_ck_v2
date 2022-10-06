@@ -207,62 +207,65 @@ try:
     pg_cursor.execute(
         f"select partno,serial_no from tbt_check_stocks where is_sync=false order by whs,partno,serial_no limit 200")
     n = 1
-    for r in pg_cursor.fetchall():
-        part_no = str(r[0])
-        serial_no = str(r[1])
-        Oracur.execute(
-            f"SELECT rowid,TAGRP,PARTNO,LOTNO,RUNNINGNO,CASEID,CASENO,STOCKQUANTITY,SHELVE,(SELECT SYS_CONTEXT('USERENV','IP_ADDRESS') FROM dual),SIID,PALLETKEY,INVOICENO,SINO FROM TXP_CARTONDETAILS WHERE PARTNO='{part_no}' AND RUNNINGNO='{serial_no}'")
-        obj = Oracur.fetchone()
-        if obj is not None:
-            rowid = obj[0]
-            whs = obj[1]
-            # part_no = obj[2]
-            lot_no = obj[3]
-            # serial_no = obj[4]
-            line_no = obj[5]
-            revision_no = obj[6]
-            if revision_no is None:
-                revision_no = "-"
-            qty = obj[7]
-            shelve = obj[8]
-            if shelve is None:
-                shelve = "-"
+    data = pg_cursor.fetchall()
+    if data is not None:
+        create_log("Start Sync carton stock", f"running at {datetime.now().strftime('%Y%m%d %H:%M:%S')}", True)
+        for r in data:
+            part_no = str(r[0])
+            serial_no = str(r[1])
+            Oracur.execute(
+                f"SELECT rowid,TAGRP,PARTNO,LOTNO,RUNNINGNO,CASEID,CASENO,STOCKQUANTITY,SHELVE,(SELECT SYS_CONTEXT('USERENV','IP_ADDRESS') FROM dual),SIID,PALLETKEY,INVOICENO,SINO FROM TXP_CARTONDETAILS WHERE PARTNO='{part_no}' AND RUNNINGNO='{serial_no}'")
+            obj = Oracur.fetchone()
+            if obj is not None:
+                rowid = obj[0]
+                whs = obj[1]
+                # part_no = obj[2]
+                lot_no = obj[3]
+                # serial_no = obj[4]
+                line_no = obj[5]
+                revision_no = obj[6]
+                if revision_no is None:
+                    revision_no = "-"
+                qty = obj[7]
+                shelve = obj[8]
+                if shelve is None:
+                    shelve = "-"
 
-            ip_address = obj[9]
-            emp_id = obj[10]
-            if emp_id is None:
-                emp_id = "-"
+                ip_address = obj[9]
+                emp_id = obj[10]
+                if emp_id is None:
+                    emp_id = "-"
 
-            pallet_no = obj[11]
-            if pallet_no is None:
-                pallet_no = "-"
+                pallet_no = obj[11]
+                if pallet_no is None:
+                    pallet_no = "-"
 
-            invoice_no = obj[12]
-            description = obj[13]
-            if description is None:
-                description = "-"
+                invoice_no = obj[12]
+                description = obj[13]
+                if description is None:
+                    description = "-"
 
-            payload = f'row_id={rowid}&whs={whs}&part_no={part_no}&lot_no={lot_no}&serial_no={serial_no}&die_no={line_no}&rev_no={revision_no}&qty={qty}&shelve={shelve}&ip_address={ip_address}&emp_id={emp_id}&ref_no={pallet_no}&receive_no={invoice_no}&description={description}'
-            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-            response = requests.request(
-                "POST", f"{api_host}/carton/history", headers=headers, data=payload)
-            print("%d . %s ==> %s %s serial_no = %s status code = %s" %
-                  (n, rowid, whs, part_no, serial_no, response.status_code))
+                payload = f'row_id={rowid}&whs={whs}&part_no={part_no}&lot_no={lot_no}&serial_no={serial_no}&die_no={line_no}&rev_no={revision_no}&qty={qty}&shelve={shelve}&ip_address={ip_address}&emp_id={emp_id}&ref_no={pallet_no}&receive_no={invoice_no}&description={description}'
+                headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+                response = requests.request(
+                    "POST", f"{api_host}/carton/history", headers=headers, data=payload)
+                print("%d . %s ==> %s %s serial_no = %s status code = %s" %
+                    (n, rowid, whs, part_no, serial_no, response.status_code))
 
-            # after create carton history
-            if response.status_code == 201:
-                pg_cursor.execute(
-                    f"update tbt_check_stocks set is_sync=true where serial_no='{serial_no}'")
-                pgdb.commit()
+                # after create carton history
+                if response.status_code == 201:
+                    pg_cursor.execute(
+                        f"update tbt_check_stocks set is_sync=true where serial_no='{serial_no}'")
+                    pgdb.commit()
 
-            time.sleep(0.2)
+                time.sleep(0.2)
 
-        n += 1
+            n += 1
+
+        create_log("End Sync carton stock", f"running at {datetime.now().strftime('%Y%m%d %H:%M:%S')}", True)
 
     pool.release(Oracon)
     pool.close()
-    create_log("Sync carton stock", ("running at %s",
-               datetime.now().strftime("%Y%m%d %H:%M:%S")), True)
 except Exception as e:
     print(e)
     create_log("Error Sync carton stock", str(e), False)
