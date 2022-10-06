@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 from ipaddress import ip_address
 import os
 import shelve
@@ -23,6 +24,14 @@ DB_PASSWORD = os.environ.get('DATABASE_PASSWORD')
 ORA_DNS = f"{os.environ.get('ORAC_DB_HOST')}/{os.environ.get('ORAC_DB_SERVICE')}"
 ORA_USERNAME = os.environ.get('ORAC_DB_USERNAME')
 ORA_PASSWORD = os.environ.get('ORAC_DB_PASSWORD')
+
+
+def create_log(title, description, is_status):
+    payload = f'title={title}&description={description}&is_active={str(is_status).lower()}'
+    response = requests.request("POST", f"{api_host}/logs", headers={
+                                'Content-Type': 'application/x-www-form-urlencoded'}, data=payload)
+    print(f"create log {title} status: {response.status_code}")
+
 
 # login
 passwd = urllib.parse.quote(api_password)
@@ -235,23 +244,28 @@ try:
 
             payload = f'row_id={rowid}&whs={whs}&part_no={part_no}&lot_no={lot_no}&serial_no={serial_no}&die_no={line_no}&rev_no={revision_no}&qty={qty}&shelve={shelve}&ip_address={ip_address}&emp_id={emp_id}&ref_no={pallet_no}&receive_no={invoice_no}&description={description}'
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-            response = requests.request("POST", f"{api_host}/carton/history", headers=headers, data=payload)
+            response = requests.request(
+                "POST", f"{api_host}/carton/history", headers=headers, data=payload)
             print("%d . %s ==> %s %s serial_no = %s status code = %s" %
                   (n, rowid, whs, part_no, serial_no, response.status_code))
 
-            ### after create carton history
+            # after create carton history
             if response.status_code == 201:
-                pg_cursor.execute(f"update tbt_check_stocks set is_sync=true where serial_no='{serial_no}'")
+                pg_cursor.execute(
+                    f"update tbt_check_stocks set is_sync=true where serial_no='{serial_no}'")
                 pgdb.commit()
-            
+
             time.sleep(0.2)
 
         n += 1
 
     pool.release(Oracon)
     pool.close()
+    create_log("Sync carton stock", ("running at %s",
+               datetime.now().strftime("%Y%m%d %H:%M:%S")), True)
 except Exception as e:
     print(e)
+    create_log("Error Sync carton stock", str(e), False)
     pass
 
 
