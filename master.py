@@ -205,7 +205,7 @@ try:
 
     # Fetch STKDB from the database
     pg_cursor.execute(
-        f"select partno,serial_no from tbt_check_stocks where is_sync=false order by whs,partno,serial_no limit 200")
+        f"select partno,serial_no from tbt_check_stocks where is_sync=false order by whs,partno,serial_no limit 300")
     n = 1
     data = pg_cursor.fetchall()
     if data is not None:
