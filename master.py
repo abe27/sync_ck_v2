@@ -209,7 +209,8 @@ try:
     n = 1
     data = pg_cursor.fetchall()
     if data is not None:
-        create_log("Start Sync carton stock", f"running at {datetime.now().strftime('%Y%m%d %H:%M:%S')}", True)
+        create_log("Start Sync carton stock",
+                   f"running at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", True)
         for r in data:
             part_no = str(r[0])
             serial_no = str(r[1])
@@ -250,7 +251,7 @@ try:
                 response = requests.request(
                     "POST", f"{api_host}/carton/history", headers=headers, data=payload)
                 print("%d . %s ==> %s %s serial_no = %s status code = %s" %
-                    (n, rowid, whs, part_no, serial_no, response.status_code))
+                      (n, rowid, whs, part_no, serial_no, response.status_code))
 
                 # after create carton history
                 if response.status_code == 201:
@@ -262,7 +263,8 @@ try:
 
             n += 1
 
-        create_log("End Sync carton stock", f"running at {datetime.now().strftime('%Y%m%d %H:%M:%S')}", True)
+        create_log("End Sync carton stock",
+                   f"running at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", True)
 
     pool.release(Oracon)
     pool.close()
