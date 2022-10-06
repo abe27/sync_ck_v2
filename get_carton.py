@@ -3,6 +3,7 @@ from datetime import datetime
 from ipaddress import ip_address
 import os
 import shelve
+import sys
 import time
 import requests
 import urllib
@@ -58,13 +59,39 @@ def fetch_carton():
         pg_cursor = pgdb.cursor()
 
         # Fetch CartonDB
-        Oracur.execute(f"")
+        Oracur.execute(
+            f"SELECT TAGRP,PARTNO,SHELVE,LOTNO,RUNNINGNO,STOCKQUANTITY,'INJ' factory,SYSDTE FROM TXP_CARTONDETAILS ORDER BY SYSDTE,PARTNO,LOTNO,RUNNINGNO")
+        data = Oracur.fetchall()
         pool.release(Oracon)
         pool.close()
-        create_log("Sync carton stock", ("running at %s",
-                                         datetime.now().strftime("%Y%m%d %H:%M:%S")), True)
+
+        n = 1
+        for i in data:
+            # print(i)
+            whs = i[0]
+            partno = i[1]
+            zone = i[2]
+            lotno = i[3]
+            serial_no = i[4]
+            qty = i[5]
+            factory = i[6]
+            pg_cursor.execute(
+                f"select serial_no,is_sync from tbt_check_stocks where serial_no='{serial_no}'")
+            stk = pg_cursor.fetchone()
+            if stk is None:
+                pg_cursor.execute(
+                    f"insert into tbt_check_stocks(whs, partno, zone, lotno, serial_no, qty, factory, is_out, is_found, is_matched, is_sync, on_date)values('{whs}', '{partno}', '{zone}', '{lotno}', '{serial_no}', {qty}, '{factory}', false, false, false, false, CURRENT_TIMESTAMP)")
+                pgdb.commit()
+            print(f"{n} . insert stock check serial no {serial_no}")
+            n += 1
+        # create_log("Sync carton stock", ("running at %s",
+        #                                  datetime.now().strftime("%Y%m%d %H:%M:%S")), True)
 
     except Exception as e:
         print(e)
-        create_log("Error Sync carton stock", str(e), False)
         pass
+
+
+if __name__ == "__main__":
+    fetch_carton()
+    sys.exit(0)
