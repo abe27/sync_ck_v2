@@ -499,6 +499,25 @@ def upload_receive_excel(headers):
         create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
         pass
 
+def check_receive_carton():
+    response = requests.request("GET", f"{api_host}/receive/notscan", headers={}, data={})
+    if response.status_code == 200:
+        obj = response.json()["data"]
+        for i in obj:
+            url = f"http://127.0.0.1:4000/carton/search?serial_no={i['serial_no']}"
+            payload={}
+            headers = {}
+            response = requests.request("GET", url, headers=headers, data=payload)
+            if response.status_code == 302:
+                ## update status
+                payload='is_sync=true'
+                headers = {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+                response = requests.request("PUT", f"{api_host}/receive/notscan/{i['id']}", headers=headers, data=payload)
+                print(f"update id: {i['id']} is :{response.status_code}")
+
+
 
 def sign_out(headers):
     try:
@@ -696,4 +715,5 @@ if __name__ == "__main__":
 
     merge_receive()
     move_whs()
+    check_receive_carton()
     sys.exit(0)
