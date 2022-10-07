@@ -482,6 +482,23 @@ def sync_order(headers):
         pass
 
 
+def upload_receive_excel(headers):
+    try:
+        list_dir = "data/receive"
+        for dir in os.listdir(list_dir):
+            filePath = os.path.join(list_dir, dir)
+            f = open(filePath, 'rb')
+            files=[('file',(dir,f,'application/octet-stream'))]
+            response = requests.request("POST", f"{api_host}/upload/receive", headers={'Authorization': headers["Authorization"]}, data={}, files=files)
+            f.close()
+
+        create_log("Upload Receive Excel", f"""{dir} is success {response.status_code}""", True)
+    except Exception as e:
+        print(e)
+        create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
+        pass
+
+
 def sign_out(headers):
     try:
         # logout
@@ -672,7 +689,8 @@ if __name__ == "__main__":
         get_mailbox(headers)
         upload_edi(headers)
         sync_receive(headers)
-        # sync_order(headers)
+        # # sync_order(headers)
+        upload_receive_excel(headers)
         sign_out(headers)
 
     merge_receive()
