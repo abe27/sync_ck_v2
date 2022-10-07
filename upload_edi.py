@@ -493,30 +493,34 @@ def upload_receive_excel(headers):
                                         'Authorization': headers["Authorization"]}, data={}, files=files)
             f.close()
             shutil.move(filePath, f"data/excels/{dir}")
-            create_log("Upload Receive Excel",f"""{dir} is success {response.status_code}""", True)
+            create_log("Upload Receive Excel",
+                       f"""{dir} is success {response.status_code}""", True)
     except Exception as e:
         print(e)
         create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
         pass
 
+
 def check_receive_carton():
-    response = requests.request("GET", f"{api_host}/receive/notscan", headers={}, data={})
+    response = requests.request(
+        "GET", f"{api_host}/receive/notscan", headers={}, data={})
     if response.status_code == 200:
         obj = response.json()["data"]
         for i in obj:
             url = f"http://127.0.0.1:4000/carton/search?serial_no={i['serial_no']}"
-            payload={}
+            payload = {}
             headers = {}
-            response = requests.request("GET", url, headers=headers, data=payload)
+            response = requests.request(
+                "GET", url, headers=headers, data=payload)
             if response.status_code == 302:
-                ## update status
-                payload='is_sync=true'
+                # update status
+                payload = f"transfer_out_no={i['transfer_out_no']}&part_no={i['part_no']}&is_sync=true"
                 headers = {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
-                response = requests.request("PUT", f"{api_host}/receive/notscan/{i['id']}", headers=headers, data=payload)
+                response = requests.request(
+                    "PUT", f"{api_host}/receive/notscan/{i['id']}", headers=headers, data=payload)
                 print(f"update id: {i['id']} is :{response.status_code}")
-
 
 
 def sign_out(headers):
@@ -715,5 +719,5 @@ if __name__ == "__main__":
 
     merge_receive()
     move_whs()
-    check_receive_carton()
+    # check_receive_carton()
     sys.exit(0)
