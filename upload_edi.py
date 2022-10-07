@@ -53,8 +53,8 @@ def line_notification(whs, msg):
                                     headers=headers,
                                     data=payload.encode("utf-8"))
         print(f"line status => {response}")
-        if response.status_code == 200:
-            return True
+        create_log("LineNotify", f"{msg} status: {response.status_code}", True)
+        return True
     except Exception as ex:
         print(ex)
         create_log("LineNotify error", f"{msg} err: {str(ex)}", False)
