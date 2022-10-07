@@ -174,3 +174,4 @@ cython_debug/
 data/download
 data/edi
 data/receive
+data/**/*.xls
