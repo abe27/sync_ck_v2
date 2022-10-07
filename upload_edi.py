@@ -493,9 +493,7 @@ def upload_receive_excel(headers):
                                         'Authorization': headers["Authorization"]}, data={}, files=files)
             f.close()
             shutil.move(filePath, f"data/excels/{dir}")
-
-        create_log("Upload Receive Excel",
-                   f"""{dir} is success {response.status_code}""", True)
+            create_log("Upload Receive Excel",f"""{dir} is success {response.status_code}""", True)
     except Exception as e:
         print(e)
         create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
