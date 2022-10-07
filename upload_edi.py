@@ -525,6 +525,7 @@ def merge_receive():
             part_type = "PART"
             cd = "20"
             whs = "C"
+            whs_code = "COM"
             rsstype = "01"
             whs_name = "CK-2"
             whs_type = "INJ"
@@ -534,6 +535,7 @@ def merge_receive():
                 whs_name = "CK-1"
                 prefix = "SD" + (d.strftime("%Y%m%d"))[2:]
                 whs = "D"
+                whs_code = "DOM"
                 whs_type = "DOM"
                 rsstype = "05"
 
@@ -576,7 +578,7 @@ def merge_receive():
             receive_key = ",".join(old_key)
             _ctn = f"{ctn:,}"
             msg = f"""รวมรอบ INJ {whs_name}\nรอบ: {merge_no}\nจำนวน: {seq} กล่อง: {_ctn}\nรอบที่รวม: {receive_key}\nวดป.: {d.strftime('%Y-%m-%d %H:%M:%S')}"""
-            line_notification(whs, msg)
+            line_notification(whs_code, msg)
             create_log(
                 "Merge Receive", f"""{whs_name} No: {merge_no} Item: {seq} CTN: {_ctn} Merge: {receive_key} Date: {d.strftime('%Y-%m-%d %H:%M:%S')}""", True)
 
