@@ -491,6 +491,7 @@ def upload_receive_excel(headers):
             files=[('file',(dir,f,'application/octet-stream'))]
             response = requests.request("POST", f"{api_host}/upload/receive", headers={'Authorization': headers["Authorization"]}, data={}, files=files)
             f.close()
+            shutil.move(filePath, f"data/exles/{dir}") 
 
         create_log("Upload Receive Excel", f"""{dir} is success {response.status_code}""", True)
     except Exception as e:
