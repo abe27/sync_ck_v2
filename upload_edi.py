@@ -719,5 +719,5 @@ if __name__ == "__main__":
 
     merge_receive()
     move_whs()
-    # check_receive_carton()
+    check_receive_carton()
     sys.exit(0)
