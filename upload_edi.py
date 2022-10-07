@@ -28,6 +28,7 @@ line_inj_dom = ""
 line_inj_com = ""
 line_aw_com = ""
 
+
 def create_log(title, description, is_status):
     payload = f'title={title}&description={description}&is_active={str(is_status).lower()}'
     response = requests.request("POST", f"{api_host}/logs", headers={
@@ -35,11 +36,17 @@ def create_log(title, description, is_status):
     print(f"create log {title} status: {response.status_code}")
 
 
-def line_notification(whs, msg):
-    token = line_inj_dom
-    if whs == "COM":
-        token = line_inj_com
+def get_line_token(whs, fac="INJ"):
+    response = requests.request(
+        "GET", f"{api_host}/notify", headers={}, data={})
+    obj = response.json()
+    for i in obj["data"]:
+        if i["whs"]["title"] == whs and i["factory"]["title"] == fac:
+            return str(i["token"])
 
+
+def line_notification(whs, msg):
+    token = get_line_token(whs, fac="INJ")
     try:
         url = "https://notify-api.line.me/api/notify"
         payload = f"message={msg}"
@@ -53,7 +60,7 @@ def line_notification(whs, msg):
                                     headers=headers,
                                     data=payload.encode("utf-8"))
         print(f"line status => {response}")
-        create_log("LineNotify", f"{msg} status: {response.status_code}", True)
+        # create_log("LineNotify", f"{msg} status: {response.status_code}", True)
         return True
     except Exception as ex:
         print(ex)
@@ -90,6 +97,7 @@ def get_rvn():
     pool.close()
     return rvm_no
 
+
 def main():
     headers = None
     try:
@@ -113,29 +121,6 @@ def main():
         pass
 
     return headers
-
-
-def get_line_token(headers):
-    payload = {}
-    response = requests.request(
-        "GET", f"{api_host}/notify", headers=headers, data=payload)
-    obj = response.json()
-    line_inj_dom = ""
-    line_inj_com = ""
-    line_aw_com = ""
-    for i in obj["data"]:
-        if i["whs"]["title"] == "DOM" and i["factory"]["title"] == "INJ":
-            line_inj_dom = str(i["token"])
-
-        if i["whs"]["title"] == "COM" and i["factory"]["title"] == "INJ":
-            line_inj_com = str(i["token"])
-
-        if i["whs"]["title"] == "COM" and i["factory"]["title"] == "AW":
-            line_aw_com = str(i["token"])
-
-        print("DOM: %s COM: %s AW: %s" %
-              (line_inj_dom, line_inj_com, line_aw_com))
-        print(f"--------------------------------")
 
 
 def get_mailbox(headers):
@@ -682,7 +667,6 @@ def move_whs():
 if __name__ == "__main__":
     headers = main()
     if headers != None:
-        get_line_token(headers)
         get_mailbox(headers)
         upload_edi(headers)
         sync_receive(headers)
