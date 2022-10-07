@@ -536,6 +536,22 @@ def sign_out(headers):
                    f"""SignOut is error {str(e)}""", False)
         pass
 
+def update_reset_stock():
+    pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
+                                     password=ORA_USERNAME,
+                                     dsn=ORA_DNS,
+                                     min=2,
+                                     max=100,
+                                     increment=1,
+                                     encoding="UTF-8")
+    # Acquire a connection from the pool
+    Oracon = pool.acquire()
+    Oracur = Oracon.cursor()
+    Oracur.execute("UPDATE TXP_CARTONDETAILS SET SIDTE=NULL,SINO=NULL,SIID=NULL WHERE SHELVE='SNON' AND SIDTE IS NOT NULL")
+    Oracon.commit()
+    pool.release(Oracon)
+    pool.close()
+
 
 def merge_receive():
     try:
@@ -708,6 +724,7 @@ def move_whs():
 
 
 if __name__ == "__main__":
+    update_reset_stock()
     headers = main()
     if headers != None:
         get_mailbox(headers)
