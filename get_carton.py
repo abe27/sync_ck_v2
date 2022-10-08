@@ -94,6 +94,67 @@ def fetch_carton():
         pass
 
 
+def fetch_part():
+    try:
+        pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
+                                     password=ORA_USERNAME,
+                                     dsn=ORA_DNS,
+                                     min=2,
+                                     max=100,
+                                     increment=1,
+                                     encoding="UTF-8")
+        # Acquire a connection from the pool
+        Oracon = pool.acquire()
+        Oracur = Oracon.cursor()
+
+        # Fetch CartonDB
+        Oracur.execute(f"SELECT PARTNO FROM TXP_CARTONDETAILS GROUP BY PARTNO ORDER BY PARTNO")
+        data = Oracur.fetchall()
+        n = 1
+        for i in data:
+            for whs in ["D", "C"]:
+                part_no = str(i[0]).strip()
+                part_name = str(i[0]).strip()
+
+
+                part_type = "PART"
+                factory = "INJ"
+                unit = "BOX"
+                whs_name = "COM"
+                if whs == "D":
+                    factory = "DOM"
+                    unit = "BOX"
+                    whs_name = "DOM"
+                
+                if part_no[:1] == 1:
+                    part_type = "WIRE"
+                    factory = "AW"
+                    unit = "COIL"
+                    whs_name = "COM"
+
+                sql_part = Oracur.execute(f"SELECT PARTNO FROM TXP_PART WHERE PARTNO='{part_no}' AND TAGRP='{whs}'")
+                sql_part_insert = f"insert into txp_part(tagrp,partno,partname,carmaker,CD,TYPE,VENDORCD,UNIT,upddte,sysdte)values('{whs}','{part_no}','{part_name}','{whs}','20','{part_type}','{factory}','{unit}',current_timestamp,current_timestamp)"
+                if sql_part.fetchone() != None:
+                    sql_part_insert = f"UPDATE TXP_PART SET partname='{part_name}' WHERE PARTNO='{part_no}' AND TAGRP='{whs}'"
+                Oracur.execute(sql_part_insert)
+                # Check Ledger Master
+                sql_ledger = Oracur.execute(
+                    f"SELECT PARTNO FROM TXP_LEDGER WHERE PARTNO='{part_no}' AND TAGRP='{whs}'")
+                sql_ledger_insert = f"""INSERT INTO TXP_LEDGER(PARTNO,TAGRP,MINIMUM,MAXIMUM,WHS,PICSHELFBIN,STKSHELFBIN,OVSSHELFBIN,OUTERPCS,UPDDTE, SYSDTE)VALUES('{part_no}','{whs}',0,0,'{whs_name}','PNON','SNON','ONON',0,current_timestamp,current_timestamp)"""
+                if sql_ledger.fetchone() is None:
+                    Oracur.execute(sql_ledger_insert)
+                print(f"{n}. WHS: {whs} PARTNO: {part_no}")
+                n += 1
+        Oracon.commit()
+        pool.release(Oracon)
+        pool.close()
+
+    except Exception as e:
+        print(e)
+        pass
+
+
 if __name__ == "__main__":
     fetch_carton()
+    fetch_part()
     sys.exit(0)
