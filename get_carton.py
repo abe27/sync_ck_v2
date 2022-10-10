@@ -153,8 +153,68 @@ def fetch_part():
         print(e)
         pass
 
+def fetch_carton_ondate():
+    try:
+        pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
+                                     password=ORA_USERNAME,
+                                     dsn=ORA_DNS,
+                                     min=2,
+                                     max=100,
+                                     increment=1,
+                                     encoding="UTF-8")
+        # Acquire a connection from the pool
+        Oracon = pool.acquire()
+        Oracur = Oracon.cursor()
+
+        # Initail PostgreSQL Server Pool 10 Live
+        pgdb_conn = SimpleConnectionPool(1,
+                                         20,
+                                         host=DB_HOSTNAME,
+                                         port=DB_PORT,
+                                         user=DB_USERNAME,
+                                         password=DB_PASSWORD,
+                                         database=DB_NAME)
+        pgdb = pgdb_conn.getconn()
+        pg_cursor = pgdb.cursor()
+
+        # Fetch CartonDB
+        Oracur.execute(
+            f"SELECT TAGRP,PARTNO,SHELVE,LOTNO,RUNNINGNO,STOCKQUANTITY,'INJ' factory,SYSDTE FROM TXP_CARTONDETAILS ORDER BY SYSDTE,PARTNO,LOTNO,RUNNINGNO")
+        data = Oracur.fetchall()
+        pool.release(Oracon)
+        pool.close()
+
+        n = 1
+        for i in data:
+            # print(i)
+            whs = i[0]
+            partno = i[1]
+            zone = i[2]
+            lotno = i[3]
+            serial_no = i[4]
+            qty = i[5]
+            factory = i[6]
+            pg_cursor.execute(
+                f"select serial_no,is_sync from tbt_check_stocks where serial_no='{serial_no}'")
+            stk = pg_cursor.fetchone()
+            txt = "Update"
+            sql_stock =f"update tbt_check_stocks set is_sync=false,on_date=CURRENT_TIMESTAMP where serial_no='{serial_no}'"
+            if stk is None:
+                sql_stock = f"insert into tbt_check_stocks(whs, partno, zone, lotno, serial_no, qty, factory, is_out, is_found, is_matched, is_sync, on_date)values('{whs}', '{partno}', '{zone}', '{lotno}', '{serial_no}', {qty}, '{factory}', false, false, false, false, CURRENT_TIMESTAMP)"
+                txt = "Not Found"
+            pg_cursor.execute(sql_stock)
+            pgdb.commit()
+            print(f"{n} . {txt} stock check serial no {serial_no}")
+            n += 1
+        # create_log("Sync carton stock", ("running at %s",
+        #                                  datetime.now().strftime("%Y%m%d %H:%M:%S")), True)
+
+    except Exception as e:
+        print(e)
+        pass
 
 if __name__ == "__main__":
     fetch_carton()
+    fetch_carton_ondate()
     fetch_part()
     sys.exit(0)
