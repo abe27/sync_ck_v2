@@ -179,7 +179,7 @@ def fetch_carton_ondate():
 
         # Fetch CartonDB
         Oracur.execute(
-            f"SELECT TAGRP,PARTNO,SHELVE,LOTNO,RUNNINGNO,STOCKQUANTITY,'INJ' factory,SYSDTE FROM TXP_CARTONDETAILS ORDER BY SYSDTE,PARTNO,LOTNO,RUNNINGNO")
+            f"SELECT TAGRP,PARTNO,SHELVE,LOTNO,RUNNINGNO,STOCKQUANTITY,'INJ' factory,SYSDTE FROM TXP_CARTONDETAILS WHERE TO_CHAR(SYSDTE, 'yyyyMMdd')=TO_CHAR(sysdate, 'yyyyMMdd') ORDER BY SYSDTE,PARTNO,LOTNO,RUNNINGNO")
         data = Oracur.fetchall()
         pool.release(Oracon)
         pool.close()
