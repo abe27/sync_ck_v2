@@ -30,11 +30,14 @@ line_aw_com = ""
 
 
 def create_log(title, description, is_status):
-    payload = f'title={title}&description={description}&is_active={str(is_status).lower()}'
-    response = requests.request("POST", f"{api_host}/logs", headers={
-                                'Content-Type': 'application/x-www-form-urlencoded'}, data=payload)
-    print(f"create log {title} status: {response.status_code}")
-
+    try:
+        payload = f'title={title}&description={description}&is_active={str(is_status).lower()}'
+        response = requests.request("POST", f"{api_host}/logs", headers={
+                                    'Content-Type': 'application/x-www-form-urlencoded'}, data=payload)
+        print(f"create log {title} status: {response.status_code}")
+    except Exception as ex:
+        print(ex)
+        pass
 
 def get_line_token(whs, fac="INJ"):
     response = requests.request(
@@ -237,6 +240,7 @@ def upload_inv(headers):
             shutil.move(filePath, f"TmpInvoice/{dir}")
             create_log("Upload Receive Excel",
                        f"""{dir} is success {response.status_code}""", True)
+            print(f"Upload Receive Excel {dir} status {response.status_code}")
     except Exception as e:
         print(e)
         create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
