@@ -38,7 +38,7 @@ def create_log(title, description, is_status):
 
 def get_line_token(whs, fac="INJ"):
     response = requests.request(
-        "GET", f"{api_host}/notify", headers={}, data={})
+        "GET", f"{api_host}/notify", headers={}, data={}) 
     obj = response.json()
     for i in obj["data"]:
         if i["whs"]["title"] == whs and i["factory"]["title"] == fac:
@@ -46,8 +46,8 @@ def get_line_token(whs, fac="INJ"):
 
 
 def line_notification(whs, msg):
-    token = get_line_token(whs, fac="INJ")
     try:
+        token = get_line_token(whs, fac="INJ")
         url = "https://notify-api.line.me/api/notify"
         payload = f"message={msg}"
         headers = {
@@ -222,6 +222,24 @@ def get_mailbox(headers):
     except Exception as ex:
         print(f"get mail box: {str(ex)}")
         create_log("Download EDI", f"{file_name} download is {str(ex)}", False)
+        pass
+
+def upload_inv(headers):
+    try:
+        list_dir = os.listdir("data/invoice")
+        list_dir.sort()
+        for dir in list_dir:
+            filePath = f"data/invoice/{dir}"
+            f = open(filePath, 'rb')
+            files = [('file', (dir, f, 'application/octet-stream'))]
+            response = requests.request("POST", f"{api_host}/upload/invoice/tap", headers={'Authorization': headers["Authorization"]}, data={}, files=files)
+            f.close()
+            shutil.move(filePath, f"TmpInvoice/{dir}")
+            create_log("Upload Receive Excel",
+                       f"""{dir} is success {response.status_code}""", True)
+    except Exception as e:
+        print(e)
+        create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
         pass
 
 
@@ -732,6 +750,7 @@ if __name__ == "__main__":
         sync_receive(headers)
         # # sync_order(headers)
         upload_receive_excel(headers)
+        upload_inv(headers)
         sign_out(headers)
 
     merge_receive()

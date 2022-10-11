@@ -175,3 +175,5 @@ data/download
 data/edi
 data/receive
 data/**/*.xls
+temp/
+temp/invoices/
