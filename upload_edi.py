@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import time
+from uuid import uuid4
 import requests
 import urllib
 import urllib3
@@ -39,9 +40,10 @@ def create_log(title, description, is_status):
         print(ex)
         pass
 
+
 def get_line_token(whs, fac="INJ"):
     response = requests.request(
-        "GET", f"{api_host}/notify", headers={}, data={}) 
+        "GET", f"{api_host}/notify", headers={}, data={})
     obj = response.json()
     for i in obj["data"]:
         if i["whs"]["title"] == whs and i["factory"]["title"] == fac:
@@ -227,6 +229,7 @@ def get_mailbox(headers):
         create_log("Download EDI", f"{file_name} download is {str(ex)}", False)
         pass
 
+
 def upload_inv(headers):
     try:
         list_dir = os.listdir("data/invoice")
@@ -235,7 +238,8 @@ def upload_inv(headers):
             filePath = f"data/invoice/{dir}"
             f = open(filePath, 'rb')
             files = [('file', (dir, f, 'application/octet-stream'))]
-            response = requests.request("POST", f"{api_host}/upload/invoice/tap", headers={'Authorization': headers["Authorization"]}, data={}, files=files)
+            response = requests.request("POST", f"{api_host}/upload/invoice/tap", headers={
+                                        'Authorization': headers["Authorization"]}, data={}, files=files)
             f.close()
             shutil.move(filePath, f"TmpInvoice/{dir}")
             create_log("Upload Receive Excel",
@@ -413,6 +417,16 @@ def sync_receive(headers):
 def sync_order(headers):
     # Sync Order
     try:
+        pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
+                                     password=ORA_USERNAME,
+                                     dsn=ORA_DNS,
+                                     min=2,
+                                     max=100,
+                                     increment=1,
+                                     encoding="UTF-8")
+        # Acquire a connection from the pool
+        Oracon = pool.acquire()
+        Oracur = Oracon.cursor()
         response = requests.request(
             "GET", f"{api_host}/order/ent", headers=headers, data={})
         data = response.json()["data"]
@@ -423,6 +437,7 @@ def sync_order(headers):
             whs = ord["consignee"]["whs"]["title"]
             cmaker = ord["consignee"]["whs"]["description"]
             factory = ord["consignee"]["factory"]["title"]
+            fac_cd_code = ord["consignee"]["factory"]["cd_code"]
             inv_prefix = ord["consignee"]["factory"]["inv_prefix"]
             label_prefix = ord["consignee"]["factory"]["label_prefix"]
             shiptype = ord["shipment"]["title"]
@@ -446,11 +461,11 @@ def sync_order(headers):
                 biivpx = ord["consignee"]["prefix"]
 
             inv_no = f"{inv_prefix}{biivpx}{etdtap[3:4]}{running_seq:04d}{shiptype}"
-            ref_inv = f"{biivpx}-{str(etdtap).replace('-', '')}-{running_seq:04d}"
+            ref_inv = f"S{biivpx}-{str(str(etdtap).replace('-', ''))}-{running_seq:04d}"
 
             # print(f"factory={factory} inv_prefix={inv_prefix} label_prefix={label_prefix} shiptype={shiptype} affcode={affcode} pc={pc} commercial={commercial} sampflg={sampflg} order_title={order_title} etdtap={etdtap} bioat={bioat} bishpc={bishpc} biivpx={biivpx} bisafn={bisafn} ship_form={ship_form} ship_to={ship_to} loading_area={loading_area} privilege={privilege} zone_code={zone_code} running_seq={running_seq} ")
             print(f"----------------------------------------------------------------")
-            print(f"{seq_ord}. {etdtap} INV: {inv_no} REF: {ref_inv} ==> {id}")
+            print(f"🐒{seq_ord}. {etdtap} INV: {inv_no} REF: {ref_inv} ==> {id}🐒")
             seq = 1
             for b in ord["order_detail"]:
                 order_id = b["id"]
@@ -459,9 +474,10 @@ def sync_order(headers):
                 pono = b["pono"]
                 partno = b["ledger"]["part"]["title"]
                 partname = b["ledger"]["part"]["description"]
+                pname = (partname).replace("'", "''")
                 part_type = b["ledger"]["part_type"]["title"]
                 unit = b["ledger"]["unit"]["title"]
-                ordermonth = b["orderplan"]["ordermonth"]
+                ordermonth = str(b["orderplan"]["ordermonth"])[:10]
                 orderorgi = b["orderplan"]["orderorgi"]
                 orderround = b["orderplan"]["orderround"]
                 balqty = b["orderplan"]["balqty"]
@@ -488,9 +504,116 @@ def sync_order(headers):
                 modifiedby = "SKTSYS"
                 lotno = b["orderplan"]["lotno"]
                 orderstatus = 0
-                print(f"{seq}. ORDER DETAIL: {order_id}")
+                # print(f"{seq}. ORDER DETAIL: {order_id}")
 
+                # Create Part Master
+                Oracur.execute(
+                    f"SELECT rowid FROM TXP_PART WHERE PARTNO='{partno}' AND TAGRP='{cmaker}'")
+                if Oracur.fetchone() is None:
+                    try:
+                        Oracur.execute(
+                            f"insert into txp_part(tagrp,partno,partname,carmaker,CD,TYPE,VENDORCD,UNIT,upddte,sysdte)values('{cmaker}','{partno}','{pname}','{cmaker}','{fac_cd_code}','{part_type}','{whs}','{unit}',current_timestamp,current_timestamp)"
+                        )
+                    except Exception as e:
+                        print(e)
+                        pass
+                # Create Master Ledger
+                Oracur.execute(
+                    f"SELECT rowid FROM TXP_LEDGER WHERE PARTNO='{partno}' AND TAGRP='{cmaker}'")
+                if Oracur.fetchone() is None:
+                    try:
+                        Oracur.execute(
+                            f"""INSERT INTO TXP_LEDGER(PARTNO,TAGRP,MINIMUM,MAXIMUM,WHS,PICSHELFBIN,STKSHELFBIN,OVSSHELFBIN,OUTERPCS,UPDDTE, SYSDTE)VALUES('{partno}','{cmaker}',0,0,'{whs}','PNON','SNON','ONON',0,current_timestamp,current_timestamp)"""
+                        )
+                    except Exception as e:
+                        print(e)
+                        pass
+
+                # check Orderplan
+                sql_orderplan = f"SELECT rowid FROM TXP_ORDERPLAN WHERE FACTORY='{factory}' AND TO_CHAR(ETDTAP,'YYYY-MM-DD') ='{etdtap}' AND SHIPTYPE='{shiptype}' AND AFFCODE='{affcode}' AND BISHPC='{bishpc}' AND PC='{pc}' AND COMMERCIAL='{commercial}' AND PONO='{pono}' AND PARTNO='{partno}'"
+                Oracur.execute(sql_orderplan)
+                sql_insert_orderplan = f"""INSERT INTO TXP_ORDERPLAN(FACTORY, SHIPTYPE, AFFCODE, PONO, ETDTAP, PARTNO, PARTNAME, ORDERMONTH, ORDERORGI, ORDERROUND, BALQTY, SHIPPEDFLG, SHIPPEDQTY, PC, COMMERCIAL, SAMPFLG, CARRIERCODE, ORDERTYPE, UPDDTE, ALLOCATEQTY, BIDRFL, DELETEFLG, REASONCD, BIOABT, FIRMFLG, BICOMD, BISTDP, BINEWT, BIGRWT, BISHPC, BIIVPX, BISAFN, BILENG, BIWIDT, BIHIGH, CURINV, OLDINV, SYSDTE, POUPDFLAG, CREATEDBY, MODIFIEDBY, LOTNO, ORDERSTATUS, ORDERID)VALUES('{factory}', '{shiptype}', '{affcode}', '{pono}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{partno}', '{pname}', TO_DATE('{ordermonth}','YYYY-MM-DD'), {orderorgi}, {orderround}, {balqty}, '{shippedflg}', {shippedqty}, '{pc}', '{commercial}', '{sampflg}', '{carriercode}', '{ordertype}', current_timestamp, 0, '{bidrfl}', '{deleteflg}', '{reasoncd}', '{bioat}', '{firmflg}', '{bicomd}', {bistdp}, {binewt}, {bigrwt}, '{bishpc}', '{biivpx}', '{bisafn}', {bileng}, {biwidt}, {bihigh}, '{ref_inv}', '{inv_no}', current_timestamp, '{poupdflag}', 'SKTSYS', 'SKTSYS', '{lotno}', 0, '{order_id}')"""
+                rowid = Oracur.fetchone()
+                txt = "INSERT"
+                if rowid != None:
+                    txt = "UPDATE"
+                    sql_insert_orderplan = f"""UPDATE TXP_ORDERPLAN SET BALQTY='{balqty}',SAMPFLG='{sampflg}', CARRIERCODE='{carriercode}', ORDERTYPE='{ordertype}', UPDDTE=current_timestamp,DELETEFLG='{deleteflg}', REASONCD='{reasoncd}', BINEWT='{binewt}', BIGRWT='{bigrwt}', CURINV='{inv_no}', OLDINV='{ref_inv}', POUPDFLAG='{poupdflag}', MODIFIEDBY='SKTSYS', LOTNO='{lotno}', ORDERSTATUS=0, ORDERID='{order_id}' WHERE ROWID='{rowid[0]}'"""
+
+                Oracur.execute(sql_insert_orderplan)
+                Oracur.execute(sql_orderplan)
+                rowid = Oracur.fetchone()[0]
+                # Create Invoice
+                Oracur.execute(
+                    f"SELECT rowid FROM TXP_ISSTRANSENT WHERE ISSUINGKEY='{ref_inv}'")
+                invData = Oracur.fetchone()
+                sql_insert_inv = f"""INSERT INTO TXP_ISSTRANSENT(ISSUINGKEY, ETDDTE, FACTORY, AFFCODE, BISHPC, CUSTNAME, COMERCIAL, ZONEID, SHIPTYPE, COMBINV, SHIPDTE, PC, SHIPFROM, ZONECODE, NOTE1, NOTE2, ISSUINGMAX, ISSUINGSTATUS, RECISSTYPE,UPDDTE, SYSDTE, UUID, CREATEDBY, MODIFIEDBY, REFINVOICE)VALUES('{ref_inv}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{factory}', '{affcode}', '{bishpc}', '{bisafn}', '{commercial}', '{bioat}', '{shiptype}', '{ordertype}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{pc}', '{ship_form}', '{zone_code}', '{loading_area}', '{privilege}',  {seq}, 0, '{fac_cd_code}',current_timestamp, current_timestamp, '{str(uuid4())}', 'SKTSYS', 'SKTSYS','{inv_no}')"""
+                if invData != None:
+                    sql_insert_inv = f"UPDATE TXP_ISSTRANSENT SET ISSUINGKEY='{ref_inv}', COMERCIAL='{commercial}', ZONEID='{bioat}', SHIPTYPE='{shiptype}', PC='{pc}', SHIPFROM='{ship_form}', ZONECODE='{zone_code}', ISSUINGMAX='{seq}', ISSUINGSTATUS=0, UPDDTE=current_timestamp, MODIFIEDBY='SKTSYS', REFINVOICE='{inv_no}' WHERE ROWID='{invData[0]}'"
+
+                # print(sql_insert_inv)
+                Oracur.execute(sql_insert_inv)
+
+                # Create Invoice Detail
+                Oracur.execute(
+                    f"SELECT rowid FROM TXP_ISSTRANSBODY WHERE ISSUINGKEY='{ref_inv}' AND PONO='{pono}' AND PARTNO='{partno}'")
+                orderDetail = Oracur.fetchone()
+                sql_ins_detail = f"""INSERT INTO TXP_ISSTRANSBODY(ISSUINGKEY, ISSUINGSEQ, PONO, TAGRP, PARTNO, STDPACK, ORDERQTY, ISSUINGSTATUS, BWIDE, BLENG, BHIGHT, NEWEIGHT, GTWEIGHT, UPDDTE, SYSDTE, PARTTYPE, PARTNAME, SHIPTYPE, EDTDTE, UUID, CREATEDBY, MODIFIEDBY, ORDERTYPE, LOTNO, ORDERID, REFINV)VALUES('{ref_inv}', {seq}, '{pono}', '{cmaker}', '{partno}', {bistdp}, {balqty}, 0, {biwidt}, {bileng}, {bihigh}, {binewt},{bigrwt}, current_timestamp, current_timestamp, '{whs[:1]}', '{pname}', '{shiptype}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{str(uuid4())}', 'SKTSYS', 'SKTSYS', '{ordertype}', '{lotno}', '{order_id}', '{ref_inv}')"""
+                if orderDetail != None:
+                    sql_ins_detail = f"""UPDATE TXP_ISSTRANSBODY SET ORDERQTY='{balqty}',NEWEIGHT='{binewt}',GTWEIGHT='{bigrwt}',UPDDTE=current_timestamp,LOTNO='{lotno}' WHERE ROWID='{orderDetail[0]}'"""
+
+                Oracur.execute(sql_ins_detail)
+                print(f"👌{seq}::::{rowid}:::{txt} ==> {inv_no} ID: {order_id}👌")
                 seq += 1
+
+            # Create PalletNo
+            list_pallet = ord["pallet"]
+            for pallet in list_pallet:
+                pallet_prefix = pallet["pallet_prefix"]
+                pallet_seq = pallet["pallet_no"]
+                box_dim = pallet["pallet_type"]["box_size"]
+                w = box_dim[:box_dim.find("x")]
+                l = box_dim[len(w) + 1:]
+                box_size_width = w
+                box_size_length = l[:l.find("x")]
+                box_size_hight = l[l.find("x")+1:]
+                pl_w = pallet["pallet_type"]["pallet_size"]
+                pallet_size_width = pl_w[:pl_w.find("x")]
+                ll = pl_w[len(pallet_size_width)+1:]
+                pallet_size_length = ll[:ll.find("x")]
+                pallet_size_hight = ll[len(pallet_size_length)+1:]
+                limit_total = len(pallet["pallet_detail"])
+
+                dim_width = pallet_size_width
+                dim_length = pallet_size_length
+                dim_hight = pallet_size_hight
+                if pallet_prefix == "C":
+                    dim_width = box_size_width
+                    dim_length = box_size_length
+                    dim_hight = box_size_hight
+
+                pallet_no = f"{pallet_prefix}{int(pallet_seq):03d}"
+
+                ### Create Invoice Pallet
+                Oracur.execute(f"SELECT ROWID FROM TXP_ISSPALLET WHERE ISSUINGKEY='{ref_inv}' AND PALLETNO='{pallet_no}'")
+                plData = Oracur.fetchone()
+                sql_pl_insert = f"""INSERT INTO TXP_ISSPALLET(FACTORY, ISSUINGKEY, PALLETNO, CUSTNAME, PLTYPE, PLOUTSTS, UPDDTE, SYSDTE, PLTOTAL,PLWIDE, PLLENG, PLHIGHT)VALUES('{factory}','{ref_inv}','{pallet_no}','{bisafn}','{pallet_prefix}',0, current_timestamp,current_timestamp,{limit_total},{dim_width},{dim_length},{dim_hight})"""
+                if plData != None:
+                    sql_pl_insert = f"UPDATE TXP_ISSPALLET SET UPDDTE=current_timestamp,PLTOTAL={limit_total} WHERE ROWID='{plData[0]}'"
+
+                Oracur.execute(sql_pl_insert)
+                pallet_detail = pallet["pallet_detail"]
+                pl_seq =1
+                for p in pallet_detail:
+                    fticket_no = (f'{label_prefix}{str(etdtap[3:4])}{int(p["seq_no"]) + 1:08d}')
+                    print(f"{pl_seq}. PALLETNO: {pallet_no} FTICK: {fticket_no}")
+                    Oracur.execute(f"SELECT ROWID FROM TXP_ISSPACKDETAIL WHERE FTICKETNO='{fticket_no}'")
+                    ftData = Oracur.fetchone()
+                    sql_fticket = f"""INSERT INTO TXP_ISSPACKDETAIL(ISSUINGKEY, PONO, TAGRP, PARTNO, FTICKETNO, SHIPPLNO,ISSUINGSTATUS, UPDDTE, SYSDTE, UUID, CREATEDBY, MODIFEDBY)VALUES('{ref_inv}', '{pono}', '{cmaker}', '{partno}', '{fticket_no}', '{pallet_no}', 0,current_timestamp, current_timestamp, '{p['id']}', 'SKTSYS', 'SKTSYS')"""
+                    if ftData != None:
+                        sql_fticket = f"UPDATE TXP_ISSPACKDETAIL SET UPDDTE=current_timestamp WHERE ROWID='{ftData[0]}'"
+
+                    Oracur.execute(sql_fticket)
+                    pl_seq += 1
 
             # Update Order Status Sync
             payload = 'is_sync=true&is_active=true'
@@ -499,6 +622,9 @@ def sync_order(headers):
             print(f"UPDATE STATUS SYNC: {response.status_code}")
             seq_ord += 1
 
+        Oracon.commit()
+        pool.release(Oracon)
+        pool.close()
     except Exception as ex:
         print(ex)
         pass
@@ -558,18 +684,20 @@ def sign_out(headers):
                    f"""SignOut is error {str(e)}""", False)
         pass
 
+
 def update_reset_stock():
     pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
-                                     password=ORA_USERNAME,
-                                     dsn=ORA_DNS,
-                                     min=2,
-                                     max=100,
-                                     increment=1,
-                                     encoding="UTF-8")
+                                 password=ORA_USERNAME,
+                                 dsn=ORA_DNS,
+                                 min=2,
+                                 max=100,
+                                 increment=1,
+                                 encoding="UTF-8")
     # Acquire a connection from the pool
     Oracon = pool.acquire()
     Oracur = Oracon.cursor()
-    Oracur.execute("UPDATE TXP_CARTONDETAILS SET SIDTE=NULL,SINO=NULL,SIID=NULL WHERE SHELVE='SNON' AND SIDTE IS NOT NULL")
+    Oracur.execute(
+        "UPDATE TXP_CARTONDETAILS SET SIDTE=NULL,SINO=NULL,SIID=NULL WHERE SHELVE='SNON' AND SIDTE IS NOT NULL")
     Oracon.commit()
     pool.release(Oracon)
     pool.close()
@@ -752,12 +880,11 @@ if __name__ == "__main__":
         get_mailbox(headers)
         upload_edi(headers)
         sync_receive(headers)
-        # # sync_order(headers)
+        merge_receive()
+        sync_order(headers)
         upload_receive_excel(headers)
         upload_inv(headers)
+        move_whs()
+        check_receive_carton()
         sign_out(headers)
-
-    merge_receive()
-    move_whs()
-    check_receive_carton()
     sys.exit(0)
