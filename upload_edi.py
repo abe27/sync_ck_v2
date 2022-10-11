@@ -431,6 +431,8 @@ def sync_order(headers):
             "GET", f"{api_host}/order/ent", headers=headers, data={})
         data = response.json()["data"]
         seq_ord = 1
+        d = datetime.now()
+        create_log("Start Sync Order", f"Sync {len(data)} Running on: {d.strftime('%Y-%m-%d %H:%M:%S')}", True)
         for ord in data:
             # print(ord)
             id = ord["id"]
@@ -621,12 +623,14 @@ def sync_order(headers):
                 "PUT", f"{api_host}/order/ent/{id}", headers=headers, data=payload)
             print(f"UPDATE STATUS SYNC: {response.status_code}")
             seq_ord += 1
-
+        d = datetime.now()
+        create_log("End Sync Order", f" At: {d.strftime('%Y-%m-%d %H:%M:%S')}", True)
         Oracon.commit()
         pool.release(Oracon)
         pool.close()
     except Exception as ex:
         print(ex)
+        create_log("Error Sync Order", f"Error with: {str(ex)}", False)
         pass
 
 
