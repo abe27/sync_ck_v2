@@ -432,7 +432,8 @@ def sync_order(headers):
         data = response.json()["data"]
         seq_ord = 1
         d = datetime.now()
-        create_log("Start Sync Order", f"Sync {len(data)} Running on: {d.strftime('%Y-%m-%d %H:%M:%S')}", True)
+        create_log("Start Sync Order",
+                   f"Sync {len(data)} Running on: {d.strftime('%Y-%m-%d %H:%M:%S')}", True)
         for ord in data:
             # print(ord)
             id = ord["id"]
@@ -572,31 +573,21 @@ def sync_order(headers):
             for pallet in list_pallet:
                 pallet_prefix = pallet["pallet_prefix"]
                 pallet_seq = pallet["pallet_no"]
-                box_dim = pallet["pallet_type"]["box_size"]
-                w = box_dim[:box_dim.find("x")]
-                l = box_dim[len(w) + 1:]
-                box_size_width = w
-                box_size_length = l[:l.find("x")]
-                box_size_hight = l[l.find("x")+1:]
-                pl_w = pallet["pallet_type"]["pallet_size"]
-                pallet_size_width = pl_w[:pl_w.find("x")]
-                ll = pl_w[len(pallet_size_width)+1:]
-                pallet_size_length = ll[:ll.find("x")]
-                pallet_size_hight = ll[len(pallet_size_length)+1:]
                 limit_total = len(pallet["pallet_detail"])
 
-                dim_width = pallet_size_width
-                dim_length = pallet_size_length
-                dim_hight = pallet_size_hight
+                dim_width = pallet["pallet_type"]["pallet_size_width"]
+                dim_length = pallet["pallet_type"]["pallet_size_length"]
+                dim_hight = pallet["pallet_type"]["pallet_size_hight"]
                 if pallet_prefix == "C":
-                    dim_width = box_size_width
-                    dim_length = box_size_length
-                    dim_hight = box_size_hight
+                    dim_width = pallet["pallet_type"]["box_size_width"]
+                    dim_length = pallet["pallet_type"]["box_size_length"]
+                    dim_hight = pallet["pallet_type"]["box_size_hight"]
 
                 pallet_no = f"{pallet_prefix}{int(pallet_seq):03d}"
 
-                ### Create Invoice Pallet
-                Oracur.execute(f"SELECT ROWID FROM TXP_ISSPALLET WHERE ISSUINGKEY='{ref_inv}' AND PALLETNO='{pallet_no}'")
+                # Create Invoice Pallet
+                Oracur.execute(
+                    f"SELECT ROWID FROM TXP_ISSPALLET WHERE ISSUINGKEY='{ref_inv}' AND PALLETNO='{pallet_no}'")
                 plData = Oracur.fetchone()
                 sql_pl_insert = f"""INSERT INTO TXP_ISSPALLET(FACTORY, ISSUINGKEY, PALLETNO, CUSTNAME, PLTYPE, PLOUTSTS, UPDDTE, SYSDTE, PLTOTAL,PLWIDE, PLLENG, PLHIGHT)VALUES('{factory}','{ref_inv}','{pallet_no}','{bisafn}','{pallet_prefix}',0, current_timestamp,current_timestamp,{limit_total},{dim_width},{dim_length},{dim_hight})"""
                 if plData != None:
@@ -604,11 +595,13 @@ def sync_order(headers):
 
                 Oracur.execute(sql_pl_insert)
                 pallet_detail = pallet["pallet_detail"]
-                pl_seq =1
+                pl_seq = 1
                 for p in pallet_detail:
-                    fticket_no = (f'{label_prefix}{str(etdtap[3:4])}{int(p["seq_no"]) + 1:08d}')
+                    fticket_no = (
+                        f'{label_prefix}{str(etdtap[3:4])}{int(p["seq_no"]) + 1:08d}')
                     print(f"{pl_seq}. PALLETNO: {pallet_no} FTICK: {fticket_no}")
-                    Oracur.execute(f"SELECT ROWID FROM TXP_ISSPACKDETAIL WHERE FTICKETNO='{fticket_no}'")
+                    Oracur.execute(
+                        f"SELECT ROWID FROM TXP_ISSPACKDETAIL WHERE FTICKETNO='{fticket_no}'")
                     ftData = Oracur.fetchone()
                     sql_fticket = f"""INSERT INTO TXP_ISSPACKDETAIL(ISSUINGKEY, PONO, TAGRP, PARTNO, FTICKETNO, SHIPPLNO,ISSUINGSTATUS, UPDDTE, SYSDTE, UUID, CREATEDBY, MODIFEDBY)VALUES('{ref_inv}', '{pono}', '{cmaker}', '{partno}', '{fticket_no}', '{pallet_no}', 0,current_timestamp, current_timestamp, '{p['id']}', 'SKTSYS', 'SKTSYS')"""
                     if ftData != None:
@@ -624,7 +617,8 @@ def sync_order(headers):
             print(f"UPDATE STATUS SYNC: {response.status_code}")
             seq_ord += 1
         d = datetime.now()
-        create_log("End Sync Order", f" At: {d.strftime('%Y-%m-%d %H:%M:%S')}", True)
+        create_log("End Sync Order",
+                   f" At: {d.strftime('%Y-%m-%d %H:%M:%S')}", True)
         Oracon.commit()
         pool.release(Oracon)
         pool.close()
