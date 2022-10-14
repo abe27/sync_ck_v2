@@ -1,4 +1,5 @@
 import csv
+import xlsxwriter
 from datetime import datetime, timedelta
 import os
 import shutil
@@ -245,10 +246,14 @@ def upload_inv(headers):
             create_log("Upload Receive Excel",
                        f"""{dir} is success {response.status_code}""", True)
             print(f"Upload Receive Excel {dir} status {response.status_code}")
+            return True
+
     except Exception as e:
         print(e)
         create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
         pass
+
+    return False
 
 
 def upload_edi(header):
@@ -428,7 +433,7 @@ def sync_order(headers):
         Oracon = pool.acquire()
         Oracur = Oracon.cursor()
         response = requests.request(
-            "GET", f"{api_host}/order/ent", headers=headers, data={})
+            "GET", f"{api_host}/order/ent?status=false", headers=headers, data={})
         data = response.json()["data"]
         seq_ord = 1
         d = datetime.now()
@@ -871,18 +876,150 @@ def move_whs():
     move_to_group('S-CK2', 'D')
 
 
+def export_check_inv(headers):
+    try:
+        dt = (datetime.now() + timedelta(days=1))
+        start = dt - timedelta(days=dt.weekday())
+        end = start + timedelta(days=6)
+        print(
+            f"start: {start.strftime('%Y-%m-%d')} to: {end.strftime('%Y-%m-%d')}")
+        response = requests.request(
+            "GET", f"{api_host}/order/ent?start_etd={start.strftime('%Y-%m-%d')}&to_etd={end.strftime('%Y-%m-%d')}", headers=headers, data={})
+        data = response.json()["data"]
+        seq_ord = 1
+        for i in data:
+            print(f"export id: {i['id']}")
+            response = requests.request(
+                "GET", f"{api_host}/order/ent/{i['id']}", headers=headers, data={})
+            ord = response.json()["data"]
+            id = ord["id"]
+            whs = ord["consignee"]["whs"]["title"]
+            cmaker = ord["consignee"]["whs"]["description"]
+            factory = ord["consignee"]["factory"]["title"]
+            fac_cd_code = ord["consignee"]["factory"]["cd_code"]
+            inv_prefix = ord["consignee"]["factory"]["inv_prefix"]
+            label_prefix = ord["consignee"]["factory"]["label_prefix"]
+            shiptype = ord["shipment"]["title"]
+            affcode = ord["consignee"]["affcode"]["title"]
+            pc = ord["pc"]["title"]
+            commercial = ord["commercial"]["title"]
+            sampflg = ord["sample_flg"]["title"]
+            order_title = ord["order_title"]["title"]
+            etdtap = str(ord["etd_date"])[:10]
+            bioat = ord["bioat"]
+            bishpc = ord["consignee"]["customer"]["title"]
+            biivpx = ord["commercial"]["prefix"]  # ord["consignee"]["prefix"]
+            bisafn = ord["consignee"]["customer"]["description"]
+            ship_form = ord["ship_form"]
+            ship_to = ord["ship_to"]
+            loading_area = ord["loading_area"]
+            privilege = ord["privilege"]
+            zone_code = ord["zone_code"]
+            running_seq = int(ord["running_seq"])
+            if ord["commercial"]["prefix"] == "-":
+                biivpx = ord["consignee"]["prefix"]
+            inv_no = f"{inv_prefix}{biivpx}{etdtap[3:4]}{running_seq:04d}{shiptype}"
+            ref_inv = f"S{biivpx}-{str(str(etdtap).replace('-', ''))}-{running_seq:04d}"
+            user = "UNKNOWN"
+            try:
+                user = ord["consignee"]["order_group"][0]["user"]["user_name"]
+            except Exception as ex:
+                create_log(f"Export Invoice {inv_no} is error",f"""Error: {str(ex)}""", False)
+                pass
+            # print(f"factory={factory} inv_prefix={inv_prefix} label_prefix={label_prefix} shiptype={shiptype} affcode={affcode} pc={pc} commercial={commercial} sampflg={sampflg} order_title={order_title} etdtap={etdtap} bioat={bioat} bishpc={bishpc} biivpx={biivpx} bisafn={bisafn} ship_form={ship_form} ship_to={ship_to} loading_area={loading_area} privilege={privilege} zone_code={zone_code} running_seq={running_seq} ")
+            print(f"----------------------------------------------------------------")
+            print(f"🐒{seq_ord}. {etdtap} INV: {inv_no} REF: {ref_inv} ==> {id}🐒")
+            print(f"Folder: {str(etdtap).replace('-','')} CUSTNAME: {bisafn}")
+            file_name = f"{user}.xlsx"
+            source_dir_path = f"export/{str(etdtap).replace('-','')}"
+            if (os.path.exists(source_dir_path)) == False:
+                os.makedirs(source_dir_path)
+
+            print(f"create file {file_name} on {source_dir_path}")
+            workbook = xlsxwriter.Workbook(f"{source_dir_path}/{file_name}")
+            worksheet = workbook.add_worksheet(f"{inv_no}_{bisafn}")
+            worksheet.write('A1', 'ID')
+            worksheet.write('B1', 'INVOICE')
+            worksheet.write('C1', 'ETD')
+            worksheet.write('D1', 'SHIP')
+            worksheet.write('E1', 'AFFCODE')
+            worksheet.write('F1', 'BISHPC')
+            worksheet.write('G1', 'BISAFN')
+            worksheet.write('H1', 'PONO')
+            worksheet.write('I1', 'PARTNO')
+            worksheet.write('J1', 'PARTNAME')
+            worksheet.write('K1', 'BALQTY')
+            worksheet.write('L1', 'STDPACK')
+            worksheet.write('M1', 'CTN')
+            worksheet.write('N1', 'MATCHED')
+            worksheet.write('O1', 'REVISE')
+            worksheet.write('P1', 'REMARK')
+
+            orderDetail = ord["order_detail"]
+            rnd = 2
+            for x in orderDetail:
+                is_matched = ''
+                if str(x['is_matched']) == "True":
+                    is_matched = 'OK'
+
+                reason_title = ""
+                if x["orderplan"]["revise_order"]["description"] != "-":
+                    reason_title = x["orderplan"]["revise_order"]["description"]
+
+                print(f"{(rnd - 1)} ==> ID: {i['id']} IS: {is_matched}")
+                worksheet.write(f'A{rnd}', (rnd - 1))
+                worksheet.write(f'B{rnd}', inv_no)
+                worksheet.write(f'C{rnd}', etdtap)
+                worksheet.write(f'D{rnd}', shiptype)
+                worksheet.write(f'E{rnd}', affcode)
+                worksheet.write(f'F{rnd}', bishpc)
+                worksheet.write(f'G{rnd}', bisafn)
+                worksheet.write(f'H{rnd}', x["pono"])
+                worksheet.write(f'I{rnd}', x["orderplan"]["part_no"])
+                worksheet.write(f'J{rnd}', x["orderplan"]["part_name"])
+                worksheet.write(f'K{rnd}', x["orderplan"]["balqty"])
+                worksheet.write(f'L{rnd}', x["orderplan"]["bistdp"])
+                worksheet.write(f'M{rnd}', x["order_ctn"])
+                worksheet.write(f'N{rnd}', is_matched)
+                worksheet.write(f'O{rnd}', x["orderplan"]["reasoncd"])
+                worksheet.write(f'P{rnd}', reason_title)
+                rnd += 1
+
+            # Finally, close the Excel file
+            # via the close() method.
+            workbook.close()
+            seq_ord += 1
+
+        # list_dir = "data/receive"
+        # for dir in os.listdir(list_dir):
+        #     filePath = f"data/receive/{dir}"
+        #     f = open(filePath, 'rb')
+        #     files = [('file', (dir, f, 'application/octet-stream'))]
+        #     response = requests.request("POST", f"{api_host}/upload/receive", headers={
+        #                                 'Authorization': headers["Authorization"]}, data={}, files=files)
+        #     f.close()
+        #     shutil.move(filePath, f"data/excels/{dir}")
+        #     create_log("Upload Receive Excel",
+        #                f"""{dir} is success {response.status_code}""", True)
+    except Exception as e:
+        print(e)
+        create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
+        pass
+
+
 if __name__ == "__main__":
     update_reset_stock()
     headers = main()
     if headers != None:
-        get_mailbox(headers)
-        upload_edi(headers)
-        sync_receive(headers)
-        merge_receive()
-        sync_order(headers)
-        upload_receive_excel(headers)
-        upload_inv(headers)
-        move_whs()
-        check_receive_carton()
+        # get_mailbox(headers)
+        # upload_edi(headers)
+        # sync_receive(headers)
+        # merge_receive()
+        # sync_order(headers)
+        # upload_receive_excel(headers)
+        if upload_inv(headers) != True:
+            export_check_inv(headers)
+        # move_whs()
+        # check_receive_carton()
         sign_out(headers)
     sys.exit(0)
