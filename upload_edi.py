@@ -886,7 +886,33 @@ def export_check_inv(headers):
         response = requests.request(
             "GET", f"{api_host}/order/ent?start_etd={start.strftime('%Y-%m-%d')}&to_etd={end.strftime('%Y-%m-%d')}", headers=headers, data={})
         data = response.json()["data"]
+
+        file_name = f"{start.strftime('%Y%m%d')}-{end.strftime('%Y%m%d')}.xlsx"
+        source_dir_path = f"export/invoice"
+        if (os.path.exists(source_dir_path)) == False:
+            os.makedirs(source_dir_path)
+        print(f"create file {file_name} on {source_dir_path}")
+        workbook = xlsxwriter.Workbook(f"{source_dir_path}/{file_name}")
+        worksheet = workbook.add_worksheet()
+        worksheet.write('A1', 'ID')
+        worksheet.write('B1', 'INVOICE')
+        worksheet.write('C1', 'ETD')
+        worksheet.write('D1', 'SHIP')
+        worksheet.write('E1', 'AFFCODE')
+        worksheet.write('F1', 'BISHPC')
+        worksheet.write('G1', 'BISAFN')
+        worksheet.write('H1', 'PONO')
+        worksheet.write('I1', 'PARTNO')
+        worksheet.write('J1', 'PARTNAME')
+        worksheet.write('K1', 'BALQTY')
+        worksheet.write('L1', 'STDPACK')
+        worksheet.write('M1', 'CTN')
+        worksheet.write('N1', 'MATCHED')
+        worksheet.write('O1', 'REVISE')
+        worksheet.write('P1', 'REMARK')
+
         seq_ord = 1
+        rnd = 2
         for i in data:
             print(f"export id: {i['id']}")
             response = requests.request(
@@ -920,44 +946,10 @@ def export_check_inv(headers):
                 biivpx = ord["consignee"]["prefix"]
             inv_no = f"{inv_prefix}{biivpx}{etdtap[3:4]}{running_seq:04d}{shiptype}"
             ref_inv = f"S{biivpx}-{str(str(etdtap).replace('-', ''))}-{running_seq:04d}"
-            user = "UNKNOWN"
-            try:
-                user = ord["consignee"]["order_group"][0]["user"]["user_name"]
-            except Exception as ex:
-                create_log(
-                    f"Export Invoice {inv_no} is error", f"""Error: {str(ex)}""", False)
-                pass
-            # print(f"factory={factory} inv_prefix={inv_prefix} label_prefix={label_prefix} shiptype={shiptype} affcode={affcode} pc={pc} commercial={commercial} sampflg={sampflg} order_title={order_title} etdtap={etdtap} bioat={bioat} bishpc={bishpc} biivpx={biivpx} bisafn={bisafn} ship_form={ship_form} ship_to={ship_to} loading_area={loading_area} privilege={privilege} zone_code={zone_code} running_seq={running_seq} ")
             print(f"----------------------------------------------------------------")
             print(f"🐒{seq_ord}. {etdtap} INV: {inv_no} REF: {ref_inv} ==> {id}🐒")
             print(f"Folder: {str(etdtap).replace('-','')} CUSTNAME: {bisafn}")
-            file_name = f"{user}.xlsx"
-            source_dir_path = f"export/{str(etdtap).replace('-','')}"
-            if (os.path.exists(source_dir_path)) == False:
-                os.makedirs(source_dir_path)
-
-            print(f"create file {file_name} on {source_dir_path}")
-            workbook = xlsxwriter.Workbook(f"{source_dir_path}/{file_name}")
-            worksheet = workbook.add_worksheet(f"{inv_no}_{bisafn}")
-            worksheet.write('A1', 'ID')
-            worksheet.write('B1', 'INVOICE')
-            worksheet.write('C1', 'ETD')
-            worksheet.write('D1', 'SHIP')
-            worksheet.write('E1', 'AFFCODE')
-            worksheet.write('F1', 'BISHPC')
-            worksheet.write('G1', 'BISAFN')
-            worksheet.write('H1', 'PONO')
-            worksheet.write('I1', 'PARTNO')
-            worksheet.write('J1', 'PARTNAME')
-            worksheet.write('K1', 'BALQTY')
-            worksheet.write('L1', 'STDPACK')
-            worksheet.write('M1', 'CTN')
-            worksheet.write('N1', 'MATCHED')
-            worksheet.write('O1', 'REVISE')
-            worksheet.write('P1', 'REMARK')
-
             orderDetail = ord["order_detail"]
-            rnd = 2
             for x in orderDetail:
                 is_matched = ''
                 if str(x['is_matched']) == "True":
@@ -986,20 +978,10 @@ def export_check_inv(headers):
                 worksheet.write(f'P{rnd}', reason_title)
                 rnd += 1
 
-            # Finally, close the Excel file
-            # via the close() method.
-            workbook.close()
             seq_ord += 1
-
-        # list_dir = "data/receive"
-        # for dir in os.listdir(list_dir):
-        #     filePath = f"data/receive/{dir}"
-        #     f = open(filePath, 'rb')
-        #     files = [('file', (dir, f, 'application/octet-stream'))]
-        #     response = requests.request("POST", f"{api_host}/upload/receive", headers={
-        #                                 'Authorization': headers["Authorization"]}, data={}, files=files)
-        #     f.close()
-        #     shutil.move(filePath, f"data/excels/{dir}")
+        # Finally, close the Excel file
+        # via the close() method.
+        workbook.close()
         #     create_log("Upload Receive Excel",
         #                f"""{dir} is success {response.status_code}""", True)
     except Exception as e:
@@ -1012,15 +994,15 @@ if __name__ == "__main__":
     update_reset_stock()
     headers = main()
     if headers != None:
-        get_mailbox(headers)
-        upload_edi(headers)
-        sync_receive(headers)
-        merge_receive()
-        sync_order(headers)
-        upload_receive_excel(headers)
-        if upload_inv(headers):
+        # get_mailbox(headers)
+        # upload_edi(headers)
+        # sync_receive(headers)
+        # merge_receive()
+        # sync_order(headers)
+        # upload_receive_excel(headers)
+        if upload_inv(headers) is False:
             export_check_inv(headers)
-        move_whs()
-        check_receive_carton()
+        # move_whs()
+        # check_receive_carton()
         sign_out(headers)
     sys.exit(0)
