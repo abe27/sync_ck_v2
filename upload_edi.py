@@ -878,7 +878,7 @@ def move_whs():
 
 def export_check_inv(headers):
     try:
-        dt = (datetime.now() + timedelta(days=1))
+        dt = (datetime.now() + timedelta(days=7))
         start = dt - timedelta(days=dt.weekday())
         end = start + timedelta(days=6)
         print(
@@ -924,7 +924,8 @@ def export_check_inv(headers):
             try:
                 user = ord["consignee"]["order_group"][0]["user"]["user_name"]
             except Exception as ex:
-                create_log(f"Export Invoice {inv_no} is error",f"""Error: {str(ex)}""", False)
+                create_log(
+                    f"Export Invoice {inv_no} is error", f"""Error: {str(ex)}""", False)
                 pass
             # print(f"factory={factory} inv_prefix={inv_prefix} label_prefix={label_prefix} shiptype={shiptype} affcode={affcode} pc={pc} commercial={commercial} sampflg={sampflg} order_title={order_title} etdtap={etdtap} bioat={bioat} bishpc={bishpc} biivpx={biivpx} bisafn={bisafn} ship_form={ship_form} ship_to={ship_to} loading_area={loading_area} privilege={privilege} zone_code={zone_code} running_seq={running_seq} ")
             print(f"----------------------------------------------------------------")
