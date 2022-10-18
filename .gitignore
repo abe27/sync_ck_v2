@@ -180,3 +180,4 @@ temp/invoices/
 TmpInvoice/
 export/
 invoice/
+.~lock*
