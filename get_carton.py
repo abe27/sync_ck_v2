@@ -108,14 +108,14 @@ def fetch_part():
         Oracur = Oracon.cursor()
 
         # Fetch CartonDB
-        Oracur.execute(f"SELECT PARTNO FROM TXP_CARTONDETAILS GROUP BY PARTNO ORDER BY PARTNO")
+        Oracur.execute(
+            f"SELECT PARTNO FROM TXP_CARTONDETAILS GROUP BY PARTNO ORDER BY PARTNO")
         data = Oracur.fetchall()
         n = 1
         for i in data:
             for whs in ["D", "C"]:
                 part_no = str(i[0]).strip()
                 part_name = str(i[0]).strip()
-
 
                 part_type = "PART"
                 factory = "INJ"
@@ -125,14 +125,15 @@ def fetch_part():
                     factory = "DOM"
                     unit = "BOX"
                     whs_name = "DOM"
-                
+
                 if part_no[:1] == 1:
                     part_type = "WIRE"
                     factory = "AW"
                     unit = "COIL"
                     whs_name = "COM"
 
-                sql_part = Oracur.execute(f"SELECT PARTNO FROM TXP_PART WHERE PARTNO='{part_no}' AND TAGRP='{whs}'")
+                sql_part = Oracur.execute(
+                    f"SELECT PARTNO FROM TXP_PART WHERE PARTNO='{part_no}' AND TAGRP='{whs}'")
                 sql_part_insert = f"insert into txp_part(tagrp,partno,partname,carmaker,CD,TYPE,VENDORCD,UNIT,upddte,sysdte)values('{whs}','{part_no}','{part_name}','{whs}','20','{part_type}','{factory}','{unit}',current_timestamp,current_timestamp)"
                 if sql_part.fetchone() != None:
                     sql_part_insert = f"UPDATE TXP_PART SET partname='{part_name}' WHERE PARTNO='{part_no}' AND TAGRP='{whs}'"
@@ -152,6 +153,7 @@ def fetch_part():
     except Exception as e:
         print(e)
         pass
+
 
 def fetch_carton_ondate():
     try:
@@ -179,7 +181,7 @@ def fetch_carton_ondate():
 
         # Fetch CartonDB
         Oracur.execute(
-            f"SELECT TAGRP,PARTNO,SHELVE,LOTNO,RUNNINGNO,STOCKQUANTITY,'INJ' factory,SYSDTE FROM TXP_CARTONDETAILS WHERE TO_CHAR(SYSDTE, 'yyyyMMdd')=TO_CHAR(sysdate, 'yyyyMMdd') ORDER BY SYSDTE,PARTNO,LOTNO,RUNNINGNO")
+            f"SELECT TAGRP,PARTNO,SHELVE,LOTNO,RUNNINGNO,STOCKQUANTITY,'INJ' factory,SYSDTE FROM TXP_CARTONDETAILS WHERE TO_CHAR(SYSDTE, 'yyyyMMdd')=TO_CHAR(sysdate - 7, 'yyyyMMdd') ORDER BY SYSDTE,PARTNO,LOTNO,RUNNINGNO")
         data = Oracur.fetchall()
         pool.release(Oracon)
         pool.close()
@@ -198,7 +200,7 @@ def fetch_carton_ondate():
                 f"select serial_no,is_sync from tbt_check_stocks where serial_no='{serial_no}'")
             stk = pg_cursor.fetchone()
             txt = "Update"
-            sql_stock =f"update tbt_check_stocks set is_sync=false,on_date=CURRENT_TIMESTAMP where serial_no='{serial_no}'"
+            sql_stock = f"update tbt_check_stocks set is_sync=false,on_date=CURRENT_TIMESTAMP where serial_no='{serial_no}'"
             if stk is None:
                 sql_stock = f"insert into tbt_check_stocks(whs, partno, zone, lotno, serial_no, qty, factory, is_out, is_found, is_matched, is_sync, on_date)values('{whs}', '{partno}', '{zone}', '{lotno}', '{serial_no}', {qty}, '{factory}', false, false, false, false, CURRENT_TIMESTAMP)"
                 txt = "Not Found"
@@ -212,6 +214,7 @@ def fetch_carton_ondate():
     except Exception as e:
         print(e)
         pass
+
 
 if __name__ == "__main__":
     fetch_carton()
