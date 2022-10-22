@@ -205,7 +205,7 @@ try:
 
     # Fetch STKDB from the database
     pg_cursor.execute(
-        f"select partno,serial_no from tbt_check_stocks where is_sync=false order by whs,partno,serial_no limit 2500")
+        f"select partno,serial_no,on_date from tbt_check_stocks where is_sync=false order by on_date,whs,partno,serial_no limit 3000")
     n = 1
     data = pg_cursor.fetchall()
     if data is not None:
@@ -259,7 +259,7 @@ try:
                         f"update tbt_check_stocks set is_sync=true where serial_no='{serial_no}'")
                     pgdb.commit()
 
-                time.sleep(1)
+                time.sleep(0.5)
 
             n += 1
 
