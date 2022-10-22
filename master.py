@@ -259,7 +259,7 @@ try:
                         f"update tbt_check_stocks set is_sync=true where serial_no='{serial_no}'")
                     pgdb.commit()
 
-                # time.sleep(0.5)
+                time.sleep(0.1)
 
             n += 1
 
