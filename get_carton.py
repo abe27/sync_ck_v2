@@ -218,6 +218,6 @@ def fetch_carton_ondate():
 
 if __name__ == "__main__":
     fetch_carton()
-    fetch_carton_ondate()
+    # fetch_carton_ondate()
     fetch_part()
     sys.exit(0)
