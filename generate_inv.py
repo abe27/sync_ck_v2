@@ -22,13 +22,10 @@ def create_log(title, description, is_status):
 
 
 def main():
-    start_date = datetime.now()
-    end_date = datetime.now() + timedelta(days=9)
-    print(str(start_date)[:10])
-    print(str(end_date)[:10])
-
     try:
         # login
+        start_date = datetime.now()
+        end_date = datetime.now() + timedelta(days=9)
         passwd = urllib.parse.quote(api_password)
         payload = f'username={api_user}&password={passwd}'
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -41,6 +38,7 @@ def main():
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         # generate invoice
+        # print(f"{api_host}/order/ent?factory=INJ&start_etd={str(start_date)[:10]}&end_date={str(end_date)[:10]}")
         response = requests.request(
             "PATCH", f"{api_host}/order/ent?factory=INJ&start_etd={str(start_date)[:10]}&end_date={str(end_date)[:10]}", headers=headers, data={})
         print(f"generate invoice status: {response.status_code}")
