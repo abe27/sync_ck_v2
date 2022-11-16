@@ -10,7 +10,7 @@ import requests
 import urllib
 import urllib3
 import cx_Oracle
-from nanoid import generate
+# from nanoid import generate
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env.local"))
