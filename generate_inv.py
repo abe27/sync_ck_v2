@@ -42,6 +42,7 @@ def main():
         response = requests.request(
             "PATCH", f"{api_host}/order/ent?factory=INJ&start_etd={str(start_date)[:10]}&end_date={str(end_date)[:10]}", headers=headers, data={})
         print(f"generate invoice status: {response.status_code}")
+        print(response.message)
         # logout
         response = requests.request(
             "GET", f"{api_host}/auth/logout", headers=headers, data={})
