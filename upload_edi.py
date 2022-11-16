@@ -443,7 +443,7 @@ def sync_order(headers):
             # print(ord)
             id = ord["id"]
             whs = ord["consignee"]["whs"]["title"]
-            cmaker = ord["consignee"]["whs"]["description"]
+            cmaker = "C"#ord["consignee"]["whs"]["description"]
             factory = ord["consignee"]["factory"]["title"]
             fac_cd_code = ord["consignee"]["factory"]["cd_code"]
             inv_prefix = ord["consignee"]["factory"]["inv_prefix"]
