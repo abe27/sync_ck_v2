@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime, timedelta
+import math
 import os
 import sys
 import time
@@ -12,13 +13,20 @@ api_host = os.getenv("API_HOST")
 api_user = os.getenv("API_USERNAME")
 api_password = os.getenv("API_PASSWORD")
 
+
 def create_log(title, description, is_status):
     payload = f'title={title}&description={description}&is_active={str(is_status).lower()}'
     response = requests.request("POST", f"{api_host}/logs", headers={
                                 'Content-Type': 'application/x-www-form-urlencoded'}, data=payload)
     print(f"create log {title} status: {response.status_code}")
 
+
 def main():
+    start_date = datetime.now()
+    end_date = datetime.now() + timedelta(days=9)
+    print(str(start_date)[:10])
+    print(str(end_date)[:10])
+
     try:
         # login
         passwd = urllib.parse.quote(api_password)
@@ -34,7 +42,7 @@ def main():
         }
         # generate invoice
         response = requests.request(
-            "PATCH", f"{api_host}/order/ent", headers=headers, data={})
+            "PATCH", f"{api_host}/order/ent?factory=INJ&start_etd={str(start_date)[:10]}&end_date={str(end_date)[:10]}", headers=headers, data={})
         print(f"generate invoice status: {response.status_code}")
         # logout
         response = requests.request(
@@ -43,12 +51,15 @@ def main():
         status = True
         if response.status_code == 500:
             status = False
-        create_log("Auto Generate Invoice", f"Generate Invoice {response.status_code}", status)
-    
+        create_log("Auto Generate Invoice",
+                   f"Generate Invoice {response.status_code}", status)
+
     except Exception as e:
-            print(e)
-            create_log("Auto Generate Invoice", f"Generate Invoice is error {str(e)}", False)
-            pass
+        print(e)
+        create_log("Auto Generate Invoice",
+                   f"Generate Invoice is error {str(e)}", False)
+        pass
+
 
 if __name__ == "__main__":
     main()
