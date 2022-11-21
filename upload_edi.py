@@ -1004,7 +1004,8 @@ if __name__ == "__main__":
         sync_order(headers)
         upload_receive_excel(headers)
         if upload_inv(headers) is False:
-            export_check_inv(headers)
+            print("upload")
+            # export_check_inv(headers)
         move_whs()
         check_receive_carton()
         sign_out(headers)
