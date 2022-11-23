@@ -26,8 +26,8 @@ def main():
         # login
         today = date.today()
         start_date = today - timedelta(days=today.weekday())
-        end_date = start_date  + timedelta(days=13)
-        print(f"Generate Order Start: {str(start_date)} End: {end_date}\n")
+        end_date = start_date  + timedelta(days=12)
+        print(f"Generate Order Start: {str(start_date)} End: {end_date}")
         passwd = urllib.parse.quote(api_password)
         payload = f'username={api_user}&password={passwd}'
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
