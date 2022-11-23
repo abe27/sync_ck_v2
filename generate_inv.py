@@ -24,7 +24,7 @@ def create_log(title, description, is_status):
 def main():
     try:
         # login
-        start_date = datetime.now()
+        start_date = datetime.now() + timedelta(days=1)
         end_date = datetime.now() + timedelta(days=14)
         passwd = urllib.parse.quote(api_password)
         payload = f'username={api_user}&password={passwd}'
