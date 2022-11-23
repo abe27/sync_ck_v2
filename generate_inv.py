@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import math
 import os
 import sys
@@ -24,8 +24,10 @@ def create_log(title, description, is_status):
 def main():
     try:
         # login
-        start_date = datetime.now() + timedelta(days=1)
-        end_date = datetime.now() + timedelta(days=14)
+        today = date.today() + timedelta(days=5)
+        start_date = (today - timedelta(days=today.weekday())) - timedelta(days=1)
+        end_date = start_date  + timedelta(days=6)
+        print(f"Generate Order Start: {str(start_date)} End: {end_date}\n")
         passwd = urllib.parse.quote(api_password)
         payload = f'username={api_user}&password={passwd}'
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
