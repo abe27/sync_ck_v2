@@ -25,7 +25,7 @@ def main():
     try:
         # login
         start_date = datetime.now() + timedelta(days=1)
-        end_date = datetime.now() + timedelta(days=7)
+        end_date = datetime.now() + timedelta(days=14)
         passwd = urllib.parse.quote(api_password)
         payload = f'username={api_user}&password={passwd}'
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
