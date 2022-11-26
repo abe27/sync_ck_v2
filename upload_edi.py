@@ -235,7 +235,7 @@ def upload_inv(headers):
     try:
         list_dir = os.listdir("data/invoice")
         list_dir.sort()
-        x = 0
+        # x = 0
         for dir in list_dir:
             filePath = f"data/invoice/{dir}"
             f = open(filePath, 'rb')
@@ -247,10 +247,10 @@ def upload_inv(headers):
             create_log("Upload Receive Excel",
                        f"""{dir} is success {response.status_code}""", True)
             print(f"Upload Receive Excel {dir} status {response.status_code}")
-            if x > 3:
-                return x
+            # if x > 3:
+            #     return x
             
-            x += 1
+            # x += 1
         return True
 
     except Exception as e:
