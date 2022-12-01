@@ -63,20 +63,23 @@ def main():
                 pass
 
             serial = Oracur.execute(
-                f"SELECT RUNNINGNO,STOCKQUANTITY FROM TXP_CARTONDETAILS WHERE RUNNINGNO='{serial_no}'")
+                f"SELECT RUNNINGNO,STOCKQUANTITY,shelve FROM TXP_CARTONDETAILS WHERE RUNNINGNO='{serial_no}'")
             is_found = 'false'
             factory = "TAP"
             is_out = 'false'
+            is_matched = 'false'
             data = serial.fetchone()
             if data != None:
                 is_found = 'true'
                 factory = "-"
+                is_matched = 'true'
                 is_out = 'true'
                 if int(data[1]) > 0:
                     is_out = 'false'
+                zone = data[2]
 
             pg_cursor.execute(
-                f"insert into tbt_check_stocks(whs,partno,zone,lotno,serial_no,qty,factory,is_out,is_found,on_date)values('{whs}','{partno}','{zone}','{lotno}','{serial_no}','{qty}','{factory}','{is_out}',{is_found},current_timestamp)")
+                f"insert into tbt_check_stocks(whs,partno,zone,lotno,serial_no,qty,factory,is_out,is_found,is_matched,on_date)values('{whs}','{partno}','{zone}','{lotno}','{serial_no}','{qty}','{factory}','{is_out}',{is_found},{is_matched},current_timestamp)")
             print(f"{r}. TAP SERIALNO: {serial_no}")
             r += 1
 
