@@ -43,7 +43,7 @@ pg_cursor = pgdb.cursor()
 
 
 def main():
-    file_excel = ["data/stocks/stock_ck1.xls", "data/stocks/stock_ck2.xls"]
+    file_excel = ["data/stocks/ck1.xls", "data/stocks/ck2.xls"]
     for filename in file_excel:
         df = pd.read_excel(filename, index_col=None)
         data = df.to_dict('records')
