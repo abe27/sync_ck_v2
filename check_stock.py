@@ -43,48 +43,50 @@ pg_cursor = pgdb.cursor()
 
 
 def main():
-    file_excel = ["data/stocks/ck1.xls", "data/stocks/ck2.xls"]
-    for filename in file_excel:
-        df = pd.read_excel(filename, index_col=None)
-        data = df.to_dict('records')
-        r = 1
-        for i in data:
-            whs = i["stock"]
-            partno = i["partno"]
-            zone = i["zone"]
-            lotno = str(i["lotno"])
-            serial_no = i["serial_no"]
-            qty = 0
-            factory = "TAP"
-            is_out = 'false'
-            try:
-                qty = int(i["qtypcs"])
-            except Exception as e:
-                pass
+    try:
+        file_excel = ["data/stocks/ck1.xls", "data/stocks/ck2.xls"]
+        for filename in file_excel:
+            df = pd.read_excel(filename, index_col=None)
+            data = df.to_dict('records')
+            r = 1
+            for i in data:
+                whs = i["stock"]
+                partno = i["partno"]
+                zone = i["zone"]
+                lotno = str(i["lotno"])
+                serial_no = i["serial_no"]
+                qty = 0
+                factory = "TAP"
+                is_out = 'false'
+                try:
+                    qty = int(i["qtypcs"])
+                except Exception as e:
+                    pass
 
-            serial = Oracur.execute(
-                f"SELECT RUNNINGNO,STOCKQUANTITY,shelve FROM TXP_CARTONDETAILS WHERE RUNNINGNO='{serial_no}'")
-            is_found = 'false'
-            factory = "TAP"
-            is_out = 'false'
-            is_matched = 'false'
-            data = serial.fetchone()
-            if data != None:
-                is_found = 'true'
-                factory = "-"
-                is_matched = 'true'
-                is_out = 'true'
-                if int(data[1]) > 0:
-                    is_out = 'false'
-                zone = data[2]
+                serial = Oracur.execute(
+                    f"SELECT RUNNINGNO,STOCKQUANTITY,shelve FROM TXP_CARTONDETAILS WHERE RUNNINGNO='{serial_no}'")
+                is_found = 'false'
+                factory = "TAP"
+                is_out = 'false'
+                is_matched = 'false'
+                data = serial.fetchone()
+                if data != None:
+                    is_found = 'true'
+                    factory = "-"
+                    is_matched = 'true'
+                    is_out = 'true'
+                    if int(data[1]) > 0:
+                        is_out = 'false'
+                    zone = data[2]
 
-            pg_cursor.execute(
-                f"insert into tbt_check_stocks(whs,partno,zone,lotno,serial_no,qty,factory,is_out,is_found,is_matched,on_date)values('{whs}','{partno}','{zone}','{lotno}','{serial_no}','{qty}','{factory}','{is_out}',{is_found},{is_matched},current_timestamp)")
-            print(f"{r}. TAP SERIALNO: {serial_no}")
-            r += 1
+                pg_cursor.execute(
+                    f"insert into tbt_check_stocks(whs,partno,zone,lotno,serial_no,qty,factory,is_out,is_found,is_matched,on_date)values('{whs}','{partno}','{zone}','{lotno}','{serial_no}','{qty}','{factory}','{is_out}',{is_found},{is_matched},current_timestamp)")
+                print(f"{r}. TAP SERIALNO: {serial_no}")
+                r += 1
 
-        pgdb.commit()
-
+            pgdb.commit()
+    except:
+        pass
 
 def check_by_spl():
     sql = f"""SELECT t.TAGRP whs,t.partno,c.SHELVE zone,c.lotno,t.RUNNINGNO serial_no,c.STOCKQUANTITY qty,'INJ' factory
@@ -116,7 +118,29 @@ def check_by_spl():
     
     pgdb.commit()
 
+def update_check_stock(factory):
+    pg_cursor.execute(f"select serial_no,zone from tbt_check_stocks where is_matched=false and factory='{factory}'")
+    obj = pg_cursor.fetchall()
+    for i in obj:
+        serial_no = i[0]
+        zone = i[1]
+        serial = Oracur.execute(f"SELECT RUNNINGNO,STOCKQUANTITY,shelve FROM TXP_CARTONDETAILS WHERE RUNNINGNO='{serial_no}'")
+        is_matched = 'false'
+        is_out = 'false'
+        data = serial.fetchone()
+        if data != None:
+            is_matched = 'true'
+            is_out = 'true'
+            if int(data[1]) > 0:
+                is_out = 'false'
+            zone = data[2]
+            pg_cursor.execute(f"update tbt_check_stocks set zone='{zone}',is_matched='{is_matched}',is_out='{is_out}' where serial_no='{serial_no}'")
+
+    pgdb.commit()
+
 if __name__ == '__main__':
+    update_check_stock("TAP")
+    update_check_stock("INJ")
     main()
     check_by_spl()
     pool.release(Oracon)
