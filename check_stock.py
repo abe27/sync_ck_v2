@@ -115,7 +115,7 @@ def check_by_spl():
         pg_cursor.execute(sql_pg)
         print(f"{r}. SPL SERIALNO: {serial_no}")
         r += 1
-    
+
     pgdb.commit()
 
 def update_check_stock(factory):
