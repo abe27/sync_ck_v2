@@ -735,10 +735,11 @@ def sync_order(headers):
                 "PUT", f"{api_host}/order/ent/{id}", headers=headers, data=payload)
             print(f"UPDATE STATUS SYNC: {response.status_code}")
             seq_ord += 1
+            Oracon.commit()
+
         d = datetime.now()
         create_log("End Sync Order",
                    f" At: {d.strftime('%Y-%m-%d %H:%M:%S')}", True)
-        Oracon.commit()
         pool.release(Oracon)
         pool.close()
     except Exception as ex:
