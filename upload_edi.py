@@ -1108,8 +1108,12 @@ def export_check_inv(headers):
         pass
 
 def patch_invoice(headers):
-    response = requests.request("PATCH", f"{api_host}/upload/invoice/tap", headers=headers)
-    print(response.text)
+    try:
+        response = requests.request("PATCH", f"{api_host}/upload/invoice/tap", headers=headers)
+        print(response.text)
+    except Exception as e:
+        print(e)
+        pass
 
 if __name__ == "__main__":
     update_reset_stock()
