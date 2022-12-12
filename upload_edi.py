@@ -482,7 +482,7 @@ def sync_orderplan(headers):
             bishpc = ord["bishpc"]
             pc = ord["pc"]["title"]
             commercial = ord["commercial"]["title"]
-            bioat = ord["bioabt"]
+            bioabt = ord["bioabt"]
             bishpc = ord["bishpc"]
             biivpx = ord["biivpx"]
             bisafn = ord["bisafn"]
@@ -513,7 +513,7 @@ def sync_orderplan(headers):
             # check Orderplan
             sql_orderplan = f"SELECT rowid FROM TXP_ORDERPLAN WHERE FACTORY='{factory}' AND TO_CHAR(ETDTAP,'YYYY-MM-DD') ='{etdtap}' AND SHIPTYPE='{shiptype}' AND AFFCODE='{affcode}' AND BISHPC='{bishpc}' AND PC='{pc}' AND COMMERCIAL='{commercial}' AND PONO='{pono}' AND PARTNO='{partno}'"
             Oracur.execute(sql_orderplan)
-            sql_insert_orderplan = f"""INSERT INTO TXP_ORDERPLAN(FACTORY, SHIPTYPE, AFFCODE, PONO, ETDTAP, PARTNO, PARTNAME, ORDERMONTH, ORDERORGI, ORDERROUND, BALQTY, SHIPPEDFLG, SHIPPEDQTY, PC, COMMERCIAL, SAMPFLG, CARRIERCODE, ORDERTYPE, UPDDTE, ALLOCATEQTY, BIDRFL, DELETEFLG, REASONCD, BIOABT, FIRMFLG, BICOMD, BISTDP, BINEWT, BIGRWT, BISHPC, BIIVPX, BISAFN, BILENG, BIWIDT, BIHIGH, CURINV, OLDINV, SYSDTE, POUPDFLAG, CREATEDBY, MODIFIEDBY, LOTNO, ORDERSTATUS, ORDERID)VALUES('{factory}', '{shiptype}', '{affcode}', '{pono}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{partno}', '{pname}', TO_DATE('{ordermonth}','YYYY-MM-DD'), {orderorgi}, {orderround}, {balqty}, '{shippedflg}', {shippedqty}, '{pc}', '{commercial}', '{sampflg}', '{carriercode}', '{ordertype}', current_timestamp, 0, '{bidrfl}', '{deleteflg}', '{reasoncd}', '{bioat}', '{firmflg}', '{bicomd}', {bistdp}, {binewt}, {bigrwt}, '{bishpc}', '{biivpx}', '{bisafn}', {bileng}, {biwidt}, {bihigh}, null, null, current_timestamp, '{poupdflag}', 'SKTSYS', 'SKTSYS', '{lotno}', 0, '{order_id}')"""
+            sql_insert_orderplan = f"""INSERT INTO TXP_ORDERPLAN(FACTORY, SHIPTYPE, AFFCODE, PONO, ETDTAP, PARTNO, PARTNAME, ORDERMONTH, ORDERORGI, ORDERROUND, BALQTY, SHIPPEDFLG, SHIPPEDQTY, PC, COMMERCIAL, SAMPFLG, CARRIERCODE, ORDERTYPE, UPDDTE, ALLOCATEQTY, BIDRFL, DELETEFLG, REASONCD, BIOABT, FIRMFLG, BICOMD, BISTDP, BINEWT, BIGRWT, BISHPC, BIIVPX, BISAFN, BILENG, BIWIDT, BIHIGH, CURINV, OLDINV, SYSDTE, POUPDFLAG, CREATEDBY, MODIFIEDBY, LOTNO, ORDERSTATUS, ORDERID)VALUES('{factory}', '{shiptype}', '{affcode}', '{pono}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{partno}', '{pname}', TO_DATE('{ordermonth}','YYYY-MM-DD'), {orderorgi}, {orderround}, {balqty}, '{shippedflg}', {shippedqty}, '{pc}', '{commercial}', '{sampflg}', '{carriercode}', '{ordertype}', current_timestamp, 0, '{bidrfl}', '{deleteflg}', '{reasoncd}', '{bioabt}', '{firmflg}', '{bicomd}', {bistdp}, {binewt}, {bigrwt}, '{bishpc}', '{biivpx}', '{bisafn}', {bileng}, {biwidt}, {bihigh}, null, null, current_timestamp, '{poupdflag}', 'SKTSYS', 'SKTSYS', '{lotno}', 0, '{order_id}')"""
             rowid = Oracur.fetchone()
             if rowid != None:
                 sql_insert_orderplan = f"""UPDATE TXP_ORDERPLAN SET BALQTY='{balqty}',SAMPFLG='{sampflg}', CARRIERCODE='{carriercode}', ORDERTYPE='{ordertype}', UPDDTE=current_timestamp,DELETEFLG='{deleteflg}', REASONCD='{reasoncd}', BINEWT='{binewt}', BIGRWT='{bigrwt}', CURINV=null, OLDINV=null, POUPDFLAG='{poupdflag}', MODIFIEDBY='SKTSYS', LOTNO='{lotno}', ORDERSTATUS=0, ORDERID='{order_id}' WHERE ROWID='{rowid[0]}'"""
@@ -569,7 +569,7 @@ def sync_order(headers):
             sampflg = ord["sample_flg"]["title"]
             order_title = ord["order_title"]["title"]
             etdtap = str(ord["etd_date"])[:10]
-            bioat = ord["bioat"]
+            bioabt = ord["bioabt"]
             bishpc = ord["consignee"]["customer"]["title"]
             biivpx = ord["commercial"]["prefix"]  # ord["consignee"]["prefix"]
             bisafn = ord["consignee"]["customer"]["description"]
@@ -585,7 +585,7 @@ def sync_order(headers):
             inv_no = f"{inv_prefix}{biivpx}{etdtap[3:4]}{running_seq:04d}{shiptype}"
             ref_inv = f"S{biivpx}-{str(str(etdtap).replace('-', ''))}-{running_seq:04d}"
 
-            # print(f"factory={factory} inv_prefix={inv_prefix} label_prefix={label_prefix} shiptype={shiptype} affcode={affcode} pc={pc} commercial={commercial} sampflg={sampflg} order_title={order_title} etdtap={etdtap} bioat={bioat} bishpc={bishpc} biivpx={biivpx} bisafn={bisafn} ship_form={ship_form} ship_to={ship_to} loading_area={loading_area} privilege={privilege} zone_code={zone_code} running_seq={running_seq} ")
+            # print(f"factory={factory} inv_prefix={inv_prefix} label_prefix={label_prefix} shiptype={shiptype} affcode={affcode} pc={pc} commercial={commercial} sampflg={sampflg} order_title={order_title} etdtap={etdtap} bioabt={bioabt} bishpc={bishpc} biivpx={biivpx} bisafn={bisafn} ship_form={ship_form} ship_to={ship_to} loading_area={loading_area} privilege={privilege} zone_code={zone_code} running_seq={running_seq} ")
             print(f"----------------------------------------------------------------")
             print(f"🐒{seq_ord}. {etdtap} INV: {inv_no} REF: {ref_inv} ==> {id}🐒")
             seq = 1
@@ -654,7 +654,7 @@ def sync_order(headers):
                 # check Orderplan
                 sql_orderplan = f"SELECT rowid FROM TXP_ORDERPLAN WHERE FACTORY='{factory}' AND TO_CHAR(ETDTAP,'YYYY-MM-DD') ='{etdtap}' AND SHIPTYPE='{shiptype}' AND AFFCODE='{affcode}' AND BISHPC='{bishpc}' AND PC='{pc}' AND COMMERCIAL='{commercial}' AND PONO='{pono}' AND PARTNO='{partno}'"
                 Oracur.execute(sql_orderplan)
-                sql_insert_orderplan = f"""INSERT INTO TXP_ORDERPLAN(FACTORY, SHIPTYPE, AFFCODE, PONO, ETDTAP, PARTNO, PARTNAME, ORDERMONTH, ORDERORGI, ORDERROUND, BALQTY, SHIPPEDFLG, SHIPPEDQTY, PC, COMMERCIAL, SAMPFLG, CARRIERCODE, ORDERTYPE, UPDDTE, ALLOCATEQTY, BIDRFL, DELETEFLG, REASONCD, BIOABT, FIRMFLG, BICOMD, BISTDP, BINEWT, BIGRWT, BISHPC, BIIVPX, BISAFN, BILENG, BIWIDT, BIHIGH, CURINV, OLDINV, SYSDTE, POUPDFLAG, CREATEDBY, MODIFIEDBY, LOTNO, ORDERSTATUS, ORDERID)VALUES('{factory}', '{shiptype}', '{affcode}', '{pono}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{partno}', '{pname}', TO_DATE('{ordermonth}','YYYY-MM-DD'), {orderorgi}, {orderround}, {balqty}, '{shippedflg}', {shippedqty}, '{pc}', '{commercial}', '{sampflg}', '{carriercode}', '{ordertype}', current_timestamp, 0, '{bidrfl}', '{deleteflg}', '{reasoncd}', '{bioat}', '{firmflg}', '{bicomd}', {bistdp}, {binewt}, {bigrwt}, '{bishpc}', '{biivpx}', '{bisafn}', {bileng}, {biwidt}, {bihigh}, '{ref_inv}', '{inv_no}', current_timestamp, '{poupdflag}', 'SKTSYS', 'SKTSYS', '{lotno}', 0, '{order_id}')"""
+                sql_insert_orderplan = f"""INSERT INTO TXP_ORDERPLAN(FACTORY, SHIPTYPE, AFFCODE, PONO, ETDTAP, PARTNO, PARTNAME, ORDERMONTH, ORDERORGI, ORDERROUND, BALQTY, SHIPPEDFLG, SHIPPEDQTY, PC, COMMERCIAL, SAMPFLG, CARRIERCODE, ORDERTYPE, UPDDTE, ALLOCATEQTY, BIDRFL, DELETEFLG, REASONCD, BIOABT, FIRMFLG, BICOMD, BISTDP, BINEWT, BIGRWT, BISHPC, BIIVPX, BISAFN, BILENG, BIWIDT, BIHIGH, CURINV, OLDINV, SYSDTE, POUPDFLAG, CREATEDBY, MODIFIEDBY, LOTNO, ORDERSTATUS, ORDERID)VALUES('{factory}', '{shiptype}', '{affcode}', '{pono}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{partno}', '{pname}', TO_DATE('{ordermonth}','YYYY-MM-DD'), {orderorgi}, {orderround}, {balqty}, '{shippedflg}', {shippedqty}, '{pc}', '{commercial}', '{sampflg}', '{carriercode}', '{ordertype}', current_timestamp, 0, '{bidrfl}', '{deleteflg}', '{reasoncd}', '{bioabt}', '{firmflg}', '{bicomd}', {bistdp}, {binewt}, {bigrwt}, '{bishpc}', '{biivpx}', '{bisafn}', {bileng}, {biwidt}, {bihigh}, '{ref_inv}', '{inv_no}', current_timestamp, '{poupdflag}', 'SKTSYS', 'SKTSYS', '{lotno}', 0, '{order_id}')"""
                 rowid = Oracur.fetchone()
                 txt = "INSERT"
                 if rowid != None:
@@ -668,9 +668,9 @@ def sync_order(headers):
                 Oracur.execute(
                     f"SELECT rowid FROM TXP_ISSTRANSENT WHERE ISSUINGKEY='{ref_inv}'")
                 invData = Oracur.fetchone()
-                sql_insert_inv = f"""INSERT INTO TXP_ISSTRANSENT(ISSUINGKEY, ETDDTE, FACTORY, AFFCODE, BISHPC, CUSTNAME, COMERCIAL, ZONEID, SHIPTYPE, COMBINV, SHIPDTE, PC, SHIPFROM, ZONECODE, NOTE1, NOTE2, ISSUINGMAX, ISSUINGSTATUS, RECISSTYPE,UPDDTE, SYSDTE, UUID, CREATEDBY, MODIFIEDBY, REFINVOICE)VALUES('{ref_inv}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{factory}', '{affcode}', '{bishpc}', '{bisafn}', '{commercial}', '{bioat}', '{shiptype}', '{ordertype}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{pc}', '{ship_form}', '{zone_code}', '{loading_area}', '{privilege}',  {seq}, 0, '{fac_cd_code}',current_timestamp, current_timestamp, '{str(uuid4())}', 'SKTSYS', 'SKTSYS','{inv_no}')"""
+                sql_insert_inv = f"""INSERT INTO TXP_ISSTRANSENT(ISSUINGKEY, ETDDTE, FACTORY, AFFCODE, BISHPC, CUSTNAME, COMERCIAL, ZONEID, SHIPTYPE, COMBINV, SHIPDTE, PC, SHIPFROM, ZONECODE, NOTE1, NOTE2, ISSUINGMAX, ISSUINGSTATUS, RECISSTYPE,UPDDTE, SYSDTE, UUID, CREATEDBY, MODIFIEDBY, REFINVOICE)VALUES('{ref_inv}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{factory}', '{affcode}', '{bishpc}', '{bisafn}', '{commercial}', '{bioabt}', '{shiptype}', '{ordertype}', TO_DATE('{etdtap}','YYYY-MM-DD'), '{pc}', '{ship_form}', '{zone_code}', '{loading_area}', '{privilege}',  {seq}, 0, '{fac_cd_code}',current_timestamp, current_timestamp, '{str(uuid4())}', 'SKTSYS', 'SKTSYS','{inv_no}')"""
                 if invData != None:
-                    sql_insert_inv = f"UPDATE TXP_ISSTRANSENT SET ISSUINGKEY='{ref_inv}', COMERCIAL='{commercial}', ZONEID='{bioat}', SHIPTYPE='{shiptype}', PC='{pc}', SHIPFROM='{ship_form}', ZONECODE='{zone_code}', ISSUINGMAX='{seq}', ISSUINGSTATUS=0, UPDDTE=current_timestamp, MODIFIEDBY='SKTSYS', REFINVOICE='{inv_no}' WHERE ROWID='{invData[0]}'"
+                    sql_insert_inv = f"UPDATE TXP_ISSTRANSENT SET ISSUINGKEY='{ref_inv}', COMERCIAL='{commercial}', ZONEID='{bioabt}', SHIPTYPE='{shiptype}', PC='{pc}', SHIPFROM='{ship_form}', ZONECODE='{zone_code}', ISSUINGMAX='{seq}', ISSUINGSTATUS=0, UPDDTE=current_timestamp, MODIFIEDBY='SKTSYS', REFINVOICE='{inv_no}' WHERE ROWID='{invData[0]}'"
 
                 # print(sql_insert_inv)
                 Oracur.execute(sql_insert_inv)
@@ -1047,7 +1047,7 @@ def export_check_inv(headers):
             sampflg = ord["sample_flg"]["title"]
             order_title = ord["order_title"]["title"]
             etdtap = str(ord["etd_date"])[:10]
-            bioat = ord["bioat"]
+            bioabt = ord["bioabt"]
             bishpc = ord["consignee"]["customer"]["title"]
             biivpx = ord["commercial"]["prefix"]  # ord["consignee"]["prefix"]
             bisafn = ord["consignee"]["customer"]["description"]
