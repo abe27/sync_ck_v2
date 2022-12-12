@@ -30,6 +30,17 @@ line_inj_dom = ""
 line_inj_com = ""
 line_aw_com = ""
 
+pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
+                                 password=ORA_USERNAME,
+                                 dsn=ORA_DNS,
+                                 min=2,
+                                 max=100,
+                                 increment=1,
+                                 encoding="UTF-8")
+# Acquire a connection from the pool
+Oracon = pool.acquire()
+Oracur = Oracon.cursor()
+
 
 def create_log(title, description, is_status):
     try:
@@ -77,16 +88,6 @@ def line_notification(whs, msg):
 
 
 def get_rvn():
-    pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
-                                 password=ORA_USERNAME,
-                                 dsn=ORA_DNS,
-                                 min=2,
-                                 max=100,
-                                 increment=1,
-                                 encoding="UTF-8")
-    # Acquire a connection from the pool
-    Oracon = pool.acquire()
-    Oracur = Oracon.cursor()
     rvm_no = None
     isFound = True
     while isFound:
@@ -98,9 +99,6 @@ def get_rvn():
         )).fetchone()[0])
         if ischeck == 0:
             isFound = False
-
-    pool.release(Oracon)
-    pool.close()
     return rvm_no
 
 
@@ -415,8 +413,8 @@ def sync_receive(headers):
             msg = f"""เปิดรอบ {whs_name}\nเลขที่: {transfer_out_no}\nจำนวน: {seq} กล่อง: {_ctn}\nวดป.: {d.strftime('%Y-%m-%d %H:%M:%S')}"""
             line_notification(whs_name, msg)
 
-        pool.release(Oracon)
-        pool.close()
+        # pool.release(Oracon)
+        # pool.close()
     except Exception as ex:
         print(f"Error Sync Receiver: {ex}")
         create_log("Sync Receive",
@@ -526,8 +524,8 @@ def sync_orderplan(headers):
             seq += 1
 
         Oracon.commit()
-        pool.release(Oracon)
-        pool.close()
+        # pool.release(Oracon)
+        # pool.close()
     except Exception as ex:
         print(str(ex))
         pass
@@ -742,8 +740,8 @@ def sync_order(headers):
         d = datetime.now()
         create_log("End Sync Order",
                    f" At: {d.strftime('%Y-%m-%d %H:%M:%S')}", True)
-        pool.release(Oracon)
-        pool.close()
+        # pool.release(Oracon)
+        # pool.close()
     except Exception as ex:
         print(ex)
         create_log("Error Sync Order", f"Error with: {str(ex)}", False)
@@ -819,8 +817,8 @@ def update_reset_stock():
     Oracur.execute(
         "UPDATE TXP_CARTONDETAILS SET SIDTE=NULL,SINO=NULL,SIID=NULL WHERE SHELVE='SNON' AND SIDTE IS NOT NULL")
     Oracon.commit()
-    pool.release(Oracon)
-    pool.close()
+    # pool.release(Oracon)
+    # pool.close()
 
 
 def merge_receive():
@@ -910,8 +908,8 @@ def merge_receive():
                 "Merge Receive", f"""{whs_name} No: {merge_no} Item: {seq} CTN: {_ctn} Merge: {receive_key} Date: {d.strftime('%Y-%m-%d %H:%M:%S')}""", True)
 
         Oracon.commit()
-        pool.release(Oracon)
-        pool.close()
+        # pool.release(Oracon)
+        # pool.close()
     except Exception as e:
         create_log("Merge Receive", str(e), False)
         pass
@@ -982,8 +980,8 @@ def move_to_group(whs, tagrp):
                 f"Move Whs", f"Move Part {serail_no} to {mvTagrp}", True)
 
     Oracon.commit()
-    pool.release(Oracon)
-    pool.close()
+    # pool.release(Oracon)
+    # pool.close()
 
 
 def move_whs():
@@ -1131,4 +1129,7 @@ if __name__ == "__main__":
         sync_orderplan(headers)
         sync_order(headers)
         sign_out(headers)
+
+    pool.release(Oracon)
+    pool.close()
     sys.exit(0)
