@@ -1126,7 +1126,6 @@ if __name__ == "__main__":
         upload_receive_excel(headers)
         if upload_inv(headers) is False:
             print("upload")
-            # export_check_inv(headers)
         move_whs()
         check_receive_carton()
         patch_invoice(headers)
