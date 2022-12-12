@@ -1107,6 +1107,9 @@ def export_check_inv(headers):
         create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
         pass
 
+def patch_invoice(headers):
+    response = requests.request("PATCH", f"{api_host}/upload/invoice/tap", headers=headers)
+    print(response.text)
 
 if __name__ == "__main__":
     update_reset_stock()
@@ -1124,5 +1127,6 @@ if __name__ == "__main__":
             # export_check_inv(headers)
         move_whs()
         check_receive_carton()
+        patch_invoice(headers)
         sign_out(headers)
     sys.exit(0)
