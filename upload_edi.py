@@ -716,6 +716,8 @@ def sync_order(headers):
                 pallet_detail = pallet["pallet_detail"]
                 pl_seq = 1
                 for p in pallet_detail:
+                    pono = p["order_detail"]["pono"]
+                    partno = p["order_detail"]["ledger"]["part"]["title"]
                     fticket_no = (
                         f'{label_prefix}{str(etdtap[3:4])}{int(p["seq_no"]) + 1:08d}')
                     print(f"{pl_seq}. PALLETNO: {pallet_no} FTICK: {fticket_no}")
@@ -1115,18 +1117,18 @@ if __name__ == "__main__":
     update_reset_stock()
     headers = main()
     if headers != None:
-        get_mailbox(headers)
-        upload_edi(headers)
-        sync_receive(headers)
-        merge_receive()
-        sync_orderplan(headers)
+        # get_mailbox(headers)
+        # upload_edi(headers)
+        # sync_receive(headers)
+        # merge_receive()
+        # sync_orderplan(headers)
         sync_order(headers)
-        upload_receive_excel(headers)
-        if upload_inv(headers) is False:
-            print("upload")
-            # export_check_inv(headers)
-        move_whs()
-        check_receive_carton()
-        patch_invoice(headers)
+        # upload_receive_excel(headers)
+        # if upload_inv(headers) is False:
+        #     print("upload")
+        #     # export_check_inv(headers)
+        # move_whs()
+        # check_receive_carton()
+        # patch_invoice(headers)
         sign_out(headers)
     sys.exit(0)
