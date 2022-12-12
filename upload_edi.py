@@ -1121,8 +1121,6 @@ if __name__ == "__main__":
         upload_edi(headers)
         sync_receive(headers)
         merge_receive()
-        sync_orderplan(headers)
-        sync_order(headers)
         upload_receive_excel(headers)
         if upload_inv(headers) is False:
             print("upload")
@@ -1130,5 +1128,7 @@ if __name__ == "__main__":
         move_whs()
         check_receive_carton()
         patch_invoice(headers)
+        sync_orderplan(headers)
+        sync_order(headers)
         sign_out(headers)
     sys.exit(0)
