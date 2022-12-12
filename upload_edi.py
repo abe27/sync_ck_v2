@@ -547,7 +547,7 @@ def sync_order(headers):
         Oracon = pool.acquire()
         Oracur = Oracon.cursor()
         response = requests.request(
-            "GET", f"{api_host}/order/ent?status=false", headers=headers, data={})
+            "GET", f"{api_host}/sync/order", headers=headers, data={})
         data = response.json()["data"]
         seq_ord = 1
         d = datetime.now()
@@ -1116,7 +1116,7 @@ if __name__ == "__main__":
         sync_receive(headers)
         merge_receive()
         sync_orderplan(headers)
-        # sync_order(headers)
+        sync_order(headers)
         upload_receive_excel(headers)
         if upload_inv(headers) is False:
             print("upload")
