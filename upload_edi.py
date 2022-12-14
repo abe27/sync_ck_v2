@@ -1129,8 +1129,8 @@ if __name__ == "__main__":
         move_whs()
         check_receive_carton()
         patch_invoice(headers)
-        sync_orderplan(headers)
-        sync_order(headers)
+        # sync_orderplan(headers)
+        # sync_order(headers)
         sign_out(headers)
 
     pool.release(Oracon)
