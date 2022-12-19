@@ -229,35 +229,6 @@ def get_mailbox(headers):
         pass
 
 
-def upload_inv():
-    try:
-        list_dir = os.listdir("data/invoice")
-        list_dir.sort()
-        # x = 0
-        for dir in list_dir:
-            filePath = f"data/invoice/{dir}"
-            f = open(filePath, 'rb')
-            files = [('file', (dir, f, 'application/octet-stream'))]
-            response = requests.request("POST", f"{api_host}/upload/invoice/tap", headers={}, data={}, files=files)
-            f.close()
-            shutil.move(filePath, f"TmpInvoice/{dir}")
-            create_log("Upload Receive Excel",
-                       f"""{dir} is success {response.status_code}""", True)
-            print(f"Upload Receive Excel {dir} status {response.status_code}")
-            # if x > 3:
-            #     return x
-
-            # x += 1
-        return True
-
-    except Exception as e:
-        print(e)
-        create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
-        pass
-
-    return False
-
-
 def upload_edi(header):
     try:
         headers = {'Authorization': header["Authorization"]},
@@ -745,25 +716,6 @@ def sync_order(headers):
         print(ex)
         create_log("Error Sync Order", f"Error with: {str(ex)}", False)
         pass
-
-
-def upload_receive_excel():
-    try:
-        list_dir = "data/receive"
-        for dir in os.listdir(list_dir):
-            filePath = f"data/receive/{dir}"
-            f = open(filePath, 'rb')
-            files = [('file', (dir, f, 'application/octet-stream'))]
-            response = requests.request("POST", f"{api_host}/upload/receive", headers={}, data={}, files=files)
-            f.close()
-            shutil.move(filePath, f"data/excels/{dir}")
-            create_log("Upload Receive Excel",
-                       f"""{dir} is success {response.status_code}""", True)
-    except Exception as e:
-        print(e)
-        create_log("Upload Receive Excel", f"""Error: {str(e)}""", False)
-        pass
-
 
 def check_receive_carton():
     response = requests.request(
