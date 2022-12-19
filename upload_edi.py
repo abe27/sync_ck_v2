@@ -1127,9 +1127,6 @@ if __name__ == "__main__":
         # sync_orderplan(headers)
         # sync_order(headers)
         sign_out(headers)
-    upload_receive_excel()
-    if upload_inv() is False:
-        print("upload")
     pool.release(Oracon)
     pool.close()
     sys.exit(0)
