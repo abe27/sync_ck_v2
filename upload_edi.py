@@ -229,7 +229,7 @@ def get_mailbox(headers):
         pass
 
 
-def upload_inv(headers):
+def upload_inv():
     try:
         list_dir = os.listdir("data/invoice")
         list_dir.sort()
@@ -238,8 +238,7 @@ def upload_inv(headers):
             filePath = f"data/invoice/{dir}"
             f = open(filePath, 'rb')
             files = [('file', (dir, f, 'application/octet-stream'))]
-            response = requests.request("POST", f"{api_host}/upload/invoice/tap", headers={
-                                        'Authorization': headers["Authorization"]}, data={}, files=files)
+            response = requests.request("POST", f"{api_host}/upload/invoice/tap", headers={}, data={}, files=files)
             f.close()
             shutil.move(filePath, f"TmpInvoice/{dir}")
             create_log("Upload Receive Excel",
@@ -247,7 +246,7 @@ def upload_inv(headers):
             print(f"Upload Receive Excel {dir} status {response.status_code}")
             # if x > 3:
             #     return x
-            
+
             # x += 1
         return True
 
@@ -748,15 +747,14 @@ def sync_order(headers):
         pass
 
 
-def upload_receive_excel(headers):
+def upload_receive_excel():
     try:
         list_dir = "data/receive"
         for dir in os.listdir(list_dir):
             filePath = f"data/receive/{dir}"
             f = open(filePath, 'rb')
             files = [('file', (dir, f, 'application/octet-stream'))]
-            response = requests.request("POST", f"{api_host}/upload/receive", headers={
-                                        'Authorization': headers["Authorization"]}, data={}, files=files)
+            response = requests.request("POST", f"{api_host}/upload/receive", headers={}, data={}, files=files)
             f.close()
             shutil.move(filePath, f"data/excels/{dir}")
             create_log("Upload Receive Excel",
@@ -1123,16 +1121,15 @@ if __name__ == "__main__":
         upload_edi(headers)
         sync_receive(headers)
         merge_receive()
-        upload_receive_excel(headers)
-        if upload_inv(headers) is False:
-            print("upload")
         move_whs()
         check_receive_carton()
         patch_invoice(headers)
         # sync_orderplan(headers)
         # sync_order(headers)
         sign_out(headers)
-
+    upload_receive_excel()
+    if upload_inv() is False:
+        print("upload")
     pool.release(Oracon)
     pool.close()
     sys.exit(0)
