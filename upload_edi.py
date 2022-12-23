@@ -291,6 +291,7 @@ def upload_edi(header):
 
 def sync_receive(headers):
     # Sync Receive
+    transfer_out_no = None
     try:
         pool = cx_Oracle.SessionPool(user=ORA_PASSWORD,
                                      password=ORA_USERNAME,
