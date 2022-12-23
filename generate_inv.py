@@ -61,7 +61,16 @@ def main():
                    f"Generate Invoice is error {str(e)}", False)
         pass
 
+def generate_fticket_tap():
+    import requests
+    url = f"{api_host}/upload/invoice/fticket"
+    payload={}
+    headers = {}
+    response = requests.request("PATCH", url, headers=headers, data=payload)
+    print(response.text)
+
 
 if __name__ == "__main__":
     main()
+    generate_fticket_tap()
     sys.exit(0)
