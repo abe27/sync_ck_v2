@@ -92,20 +92,34 @@ def upload_inv():
         list_dir = os.listdir("data/invoice")
         list_dir.sort()
         # x = 0
-        for dir in list_dir:
-            filePath = f"data/invoice/{dir}"
+        if len(list_dir) > 0:
+            filePath = f"data/invoice/{list_dir[0]}"
             f = open(filePath, 'rb')
-            files = [('file', (dir, f, 'application/octet-stream'))]
+            files = [('file', (list_dir[0], f, 'application/octet-stream'))]
             response = requests.request("POST", f"{api_host}/upload/invoice/tap", headers={}, data={}, files=files)
             f.close()
-            shutil.move(filePath, f"TmpInvoice/{dir}")
+            shutil.move(filePath, f"TmpInvoice/{list_dir[0]}")
             create_log("Upload Receive Excel",
-                       f"""{dir} is success {response.status_code}""", True)
-            print(f"Upload Receive Excel {dir} status {response.status_code}")
+                       f"""{list_dir[0]} is success {response.status_code}""", True)
+            print(f"Upload Receive Excel {list_dir[0]} status {response.status_code}")
             # if x > 3:
             #     return x
 
             # x += 1
+        # for dir in list_dir:
+        #     filePath = f"data/invoice/{dir}"
+        #     f = open(filePath, 'rb')
+        #     files = [('file', (dir, f, 'application/octet-stream'))]
+        #     response = requests.request("POST", f"{api_host}/upload/invoice/tap", headers={}, data={}, files=files)
+        #     f.close()
+        #     shutil.move(filePath, f"TmpInvoice/{dir}")
+        #     create_log("Upload Receive Excel",
+        #                f"""{dir} is success {response.status_code}""", True)
+        #     print(f"Upload Receive Excel {dir} status {response.status_code}")
+        #     # if x > 3:
+        #     #     return x
+
+        #     # x += 1
         return True
 
     except Exception as e:
